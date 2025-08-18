@@ -1,3 +1,9 @@
+.idea
+.vscode
+.venv
+__pycache__
+*.pyc
+
 # MacOS
 # General
 .DS_Store
