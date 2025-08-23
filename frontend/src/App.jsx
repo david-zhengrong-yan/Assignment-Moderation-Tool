@@ -5,6 +5,7 @@ import './App.css';
 import { Route, Routes } from "react-router";
 import IndexPage from "./pages/IndexPage";
 import SignupPage from './pages/SignupPage';
+import HomePage from './pages/HomePage';
 
 function App() {
   // const [count, setCount] = useState(0)
@@ -39,6 +40,7 @@ function App() {
       <Routes>
         <Route path="/" element={ <IndexPage /> }/>
         <Route path="/signup" element={ <SignupPage />}/>
+        <Route path="home" element={ <HomePage /> } />
       </Routes>
     </>
   );
