@@ -6,6 +6,7 @@ import { Route, Routes } from "react-router";
 import IndexPage from "./pages/IndexPage";
 import SignupPage from './pages/SignupPage';
 import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
 
 function App() {
   // const [count, setCount] = useState(0)
@@ -41,6 +42,8 @@ function App() {
         <Route path="/" element={ <IndexPage /> }/>
         <Route path="/signup" element={ <SignupPage />}/>
         <Route path="home" element={ <HomePage /> } />
+        <Route path="/admin-login" element={<LoginPage />} />
+        <Route path="/marker-login" element={<LoginPage />} />
       </Routes>
     </>
   );
