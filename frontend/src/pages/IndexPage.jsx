@@ -116,7 +116,7 @@ function IndexPage() {
                     </Grid>
                 </Box>
                 <Box>
-                    <Link component={RouterLink} to="/signup" underline="hover">
+                    <Link component={RouterLink} to="/signup">
                         Not a user? You can sign up here.
                     </Link>
                 </Box>

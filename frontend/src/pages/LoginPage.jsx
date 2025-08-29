@@ -22,9 +22,8 @@ function LoginPage() {
 
     const location = useLocation();
     const currentPathname = location.pathname;
+    const routeName = currentPathname.split('/').pop();
     const handleSubmit = () => { 
-        const routeName = currentPathname.split('/').pop();
-
         if(routeName === "admin-login") {
             console.log(routeName);
         }
@@ -45,10 +44,10 @@ function LoginPage() {
                 }}
             >
                 <Container 
-                    maxwidth="xs"
                     sx={{
                         bgcolor : "",
                         padding : "50px",
+                        width : "70%",
                     }}
                 >
                     <Paper 
@@ -68,7 +67,7 @@ function LoginPage() {
                                 mb : "50px",
                             }}
                         >
-                            Login
+                            {routeName==="marker-login" ? "Marker" : "Administrator"} Login
                         </Typography>
                         <Box 
                         component="form" 
@@ -132,7 +131,7 @@ function LoginPage() {
                                 type="submit" 
                                 variant="contained" 
                                 sx={{ 
-                                    mt : 1,
+                                    mt : 5,
                                     bgcolor : "#F6C6C6",
                                     color : "black",
                                     borderRadius: 10,
@@ -145,7 +144,16 @@ function LoginPage() {
                         </Box>
                         <Box
                             sx={{
-                                mt : 10,
+                                mt : 5,
+                            }}
+                        >
+                            <Link component={RouterLink} to={routeName==="marker-login" ? "/admin-login" : "/marker-login"}>
+                                Want to login as {routeName==="marker-login" ? "administrator" : "marker"}? Click here.
+                            </Link>
+                        </Box>
+                        <Box
+                            sx={{
+                                mt : 2,
                             }}
                         >
                             <Link component={RouterLink} to="/signup">
