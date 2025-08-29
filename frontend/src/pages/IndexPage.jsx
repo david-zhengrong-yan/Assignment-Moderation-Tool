@@ -70,7 +70,7 @@ function IndexPage() {
                                     variant="contained"
                                     onClick={markerLoginRedirect}
                                     sx={{
-                                        bgcolor: "pink",
+                                        bgcolor: "#F6C6C6",
                                         color: "black",
                                     }}
                                 >
@@ -105,7 +105,7 @@ function IndexPage() {
                                     variant="contained"
                                     onClick={adminLoginRedirect}
                                     sx={{
-                                        bgcolor: "pink",
+                                        bgcolor: "#F6C6C6",
                                         color: "black",
                                     }}
                                 >

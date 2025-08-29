@@ -14,13 +14,13 @@ import {
     Select,
     MenuItem} from "@mui/material";
 import { Link as RouterLink} from "react-router";
-import { useState } from "react";
+import * as React from "react";
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 function SignupPage() {
-    const [showPassword, setShowPassword] = useState(false);
-    const [role, setRole] = useState("marker");
+    const [showPassword, setShowPassword] = React.useState(false);
+    const [role, setRole] = React.useState("marker");
     const handleSubmit = () => { console.log("login");};
     const handleSelect = (event) => { setRole(event.target.value);};
     return (

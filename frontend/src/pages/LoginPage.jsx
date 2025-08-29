@@ -10,77 +10,155 @@ import {
     Typography, 
     Link,
     InputAdornment,
-    IconButton} from "@mui/material";
-import { Link as RouterLink} from "react-router";
-import { useState } from "react";
+    IconButton,
+    CssBaseline} from "@mui/material";
+import { useLocation, Link as RouterLink} from "react-router";
+import * as React from 'react';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 function LoginPage() {
-    const [showPassword, setShowPassword] = useState(false);
-    const handleSubmit = () => { console.log("login");}
+    const [showPassword, setShowPassword] = React.useState(false);
+
+    const location = useLocation();
+    const currentPathname = location.pathname;
+    const handleSubmit = () => { 
+        const routeName = currentPathname.split('/').pop();
+
+        if(routeName === "admin-login") {
+            console.log(routeName);
+        }
+
+        if (routeName === "marker-login") {
+            console.log(routeName);
+        }
+    };
+
+    
+
     return (
-        <Container maxwidth="xs">
-            <Paper elevation={10} sx={{marginTop : 8, padding : 2}}>
-                <Typography component="h1" variant="h5" sx={{ textAlign : "center" }}>
-                    Login
-                </Typography>
-                <Box 
-                component="form" 
-                onSubmit={handleSubmit}
-                noValidate
-                sx={{ mt: 1}}
+        <React.Fragment>
+            <CssBaseline />
+            <Container
+                sx={{
+                    bgcolor : "white",
+                }}
+            >
+                <Container 
+                    maxwidth="xs"
+                    sx={{
+                        bgcolor : "",
+                        padding : "50px",
+                    }}
                 >
-                    <TextField 
-                        placeholder="Enter email" 
-                        fullWidth
-                        required
-                        autoFocus
-                        sx={{ mb : 2 }}
-                    />
-                    <TextField 
-                        placeholder="Enter password" 
-                        fullWidth
-                        required
-                        type={showPassword ? "text" : "password"}
-                        slotProps={{
-                            input : {
-                                endAdornment : (
-                                    <InputAdornment position="end">
-                                        <IconButton
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            edge="end"
-                                        >
-                                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                                        </IconButton>
-                                    </InputAdornment>
-                                ),
-                            },
+                    <Paper 
+                        elevation={10} 
+                        sx={{
+                            marginTop : 8, 
+                            padding : 5,
+                            borderRadius: "20px",
+                            bgcolor : "#E5E5E5",
                         }}
-                    />
-                    <FormControlLabel
-                        control={<Checkbox value="remember" color="primary" />}
-                        label="Remember me"
-                        sx={{ alignItems : "left"}}
-                    />
-                    <Button type="submit" variant="contained" fullWidth sx={{ mt : 1}}>
-                        Login
-                    </Button>
-                </Box>
-                <Grid container justifyContent="space-between" sx={{mt : 1}}>
-                    <Grid item>
-                        <Link component={RouterLink} to="/signup">
-                            Forgot password?
-                        </Link>
-                    </Grid>
-                    <Grid item>
-                        <Link component={RouterLink} to="/signup">
-                            Not a user? Sign up here.
-                        </Link>
-                    </Grid>
-                </Grid>
-            </Paper>
-        </Container>
+                    >
+                        <Typography 
+                            component="h1" 
+                            variant="h5" 
+                            sx={{ 
+                                textAlign : "center",
+                                mb : "50px",
+                            }}
+                        >
+                            Login
+                        </Typography>
+                        <Box 
+                        component="form" 
+                        onSubmit={handleSubmit}
+                        noValidate
+                        sx={{ mt: 1}}
+                        >
+                            <TextField 
+                                placeholder="Enter email" 
+                                fullWidth
+                                required
+                                autoFocus
+                                slotProps={{
+                                    input : {
+                                        sx : {
+                                            mb : 2,
+                                            bgcolor : "white",
+                                            borderRadius : 10
+                                        }
+                                    }
+                                }}
+                            />
+                            <TextField 
+                                placeholder="Enter password" 
+                                fullWidth
+                                required
+                                type={showPassword ? "text" : "password"}
+                                slotProps={{
+                                    input : {
+                                        endAdornment : (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    edge="end"
+                                                >
+                                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                        sx : { 
+                                            borderRadius: 10,
+                                            bgcolor : "white"
+
+                                        }
+                                    },
+                                }}
+                            />
+                            <Box
+                                sx={{
+                                    textAlign : "left",
+                                    ml : "5px",
+                                    mt : "10px"
+                                }}
+                            >
+                                <Link component={RouterLink} to="/signup">
+                                    Forgot password?
+                                </Link>
+                            </Box>
+                            
+                            <Button 
+                                type="submit" 
+                                variant="contained" 
+                                sx={{ 
+                                    mt : 1,
+                                    bgcolor : "#F6C6C6",
+                                    color : "black",
+                                    borderRadius: 10,
+                                    width : 100,
+                                }}
+                            
+                            >
+                                Login
+                            </Button>
+                        </Box>
+                        <Box
+                            sx={{
+                                mt : 10,
+                            }}
+                        >
+                            <Link component={RouterLink} to="/signup">
+                                Not a user? You can sign up here.
+                            </Link>
+                        </Box>
+                    </Paper>
+                </Container>
+
+            </Container>
+        </React.Fragment>
+        
+        
     )
 }
 
