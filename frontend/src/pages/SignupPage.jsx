@@ -18,6 +18,7 @@ import { Link as RouterLink} from "react-router";
 import * as React from "react";
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import Topbar from "../components/Topbar";
 
 function SignupPage() {
     const [showPassword, setShowPassword] = React.useState(false);
@@ -29,6 +30,7 @@ function SignupPage() {
         <React.Fragment>
             <CssBaseline />
             <Container>
+                <Topbar />
                 <Container sx={{ width: "40%"}}>
                     <Paper 
                         elevation={10} 

@@ -9,6 +9,7 @@ import {
 import * as React from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Link as RouterLink, useNavigate } from "react-router";
+import Topbar from "../components/Topbar";
 
 function IndexPage() {
     const navigate = useNavigate();
@@ -22,6 +23,7 @@ function IndexPage() {
         <React.Fragment>
             <CssBaseline />
             <Container sx={{ bgcolor: "white",}}>
+                <Topbar />
                 <Box
                     sx={{
                         mb: "40px",
@@ -72,6 +74,7 @@ function IndexPage() {
                                     sx={{
                                         bgcolor: "#F6C6C6",
                                         color: "black",
+                                        mt : 10,
                                     }}
                                 >
                                     Staff Login
@@ -107,6 +110,7 @@ function IndexPage() {
                                     sx={{
                                         bgcolor: "#F6C6C6",
                                         color: "black",
+                                        mt : 10,
                                     }}
                                 >
                                     Admin Login

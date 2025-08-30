@@ -6,6 +6,12 @@ def index(request):
     return JsonResponse({ "message" : "hello, world!"})
 
 
+def login(request):
+    pass
+
+def logout(request):
+    pass
+
 def show_assignments(request):
     return JsonResponse({ "message" : "hello, world!"})
 
@@ -15,3 +21,7 @@ def delete_assignment(request):
 def create_assignment(request):
     print("Assignment is created")
     return JsonResponse({"message" : "Assignment is created"})
+
+
+def show_subjects(request):
+    pass

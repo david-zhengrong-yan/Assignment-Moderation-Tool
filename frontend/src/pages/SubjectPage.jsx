@@ -6,7 +6,7 @@ import {
 import Navbar from "../components/Navbar"
 import * as React from 'react';
 
-function HomePage() {
+function SubjectPage() {
     return (
         <React.Fragment>
             <CssBaseline />
@@ -17,4 +17,4 @@ function HomePage() {
     );
 }
 
-export default HomePage;
+export default SubjectPage;
