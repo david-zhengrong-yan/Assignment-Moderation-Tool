@@ -25,6 +25,7 @@ class Assignment(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True)
 
 class Submission(models.Model):
+    name = models.CharField(max_length=64)
     comment = models.TextField()
     admin_percentages = models.JSONField()
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
