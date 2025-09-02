@@ -5,7 +5,7 @@ import {
     Typography
 } from '@mui/material';
 
-function PageTitle(props) {
+export default function PageTitle(props) {
     // const navbarWidth = 200;
     return (
         <Box sx={{ flexGrow: 1 }} >
@@ -31,6 +31,3 @@ function PageTitle(props) {
     </Box>
     );
 }
-
-
-export default PageTitle;

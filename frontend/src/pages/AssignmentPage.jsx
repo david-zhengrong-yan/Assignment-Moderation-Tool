@@ -6,7 +6,7 @@ import {
 import Navbar from "../components/Navbar"
 import * as React from 'react';
 
-function AssignmentPage() {
+export default function AssignmentPage() {
     return (
         <React.Fragment>
             <CssBaseline />
@@ -16,5 +16,3 @@ function AssignmentPage() {
         </React.Fragment>
     );
 }
-
-export default AssignmentPage;

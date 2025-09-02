@@ -19,7 +19,7 @@ import Typography from '@mui/material/Typography';
 import { Avatar } from '@mui/material';
 import PersonIcon from "@mui/icons-material/Person";
 
-function Navbar() {
+export default function Navbar() {
     return (
 
         <Drawer
@@ -82,5 +82,3 @@ function Navbar() {
 
     );
 }
-
-export default Navbar;

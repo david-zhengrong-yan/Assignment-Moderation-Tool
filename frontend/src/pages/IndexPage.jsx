@@ -11,7 +11,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { Link as RouterLink, useNavigate } from "react-router";
 import Topbar from "../components/Topbar";
 
-function IndexPage() {
+export default function IndexPage() {
     const navigate = useNavigate();
     const adminLoginRedirect = () => {
         navigate("/admin-login");
@@ -128,5 +128,3 @@ function IndexPage() {
         </React.Fragment>
     );
 }
-
-export default IndexPage

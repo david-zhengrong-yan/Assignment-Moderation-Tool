@@ -18,7 +18,7 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Topbar from "../components/Topbar";
 
-function LoginPage() {
+export default function LoginPage() {
     const [showPassword, setShowPassword] = React.useState(false);
 
     const location = useLocation();
@@ -171,5 +171,3 @@ function LoginPage() {
         
     )
 }
-
-export default LoginPage;

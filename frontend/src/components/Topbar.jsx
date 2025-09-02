@@ -8,7 +8,7 @@ import {
 import { Link as RouterLink } from 'react-router';
 import deakinLogo from '../assets/logo_deakin-rebrand-stacked.png'
 
-function Topbar() {
+export default function Topbar() {
     return (
         <Box sx={{ flexGrow: 1 }}>
             <AppBar position="fixed"
@@ -34,5 +34,3 @@ function Topbar() {
         </Box>
     );
 }
-
-export default Topbar;

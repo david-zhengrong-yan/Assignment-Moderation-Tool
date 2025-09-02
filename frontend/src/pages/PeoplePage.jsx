@@ -6,7 +6,7 @@ import {
 import Navbar from "../components/Navbar"
 import * as React from 'react';
 
-function PeoplePage() {
+export default function PeoplePage() {
     return (
         <React.Fragment>
             <CssBaseline />
@@ -16,5 +16,3 @@ function PeoplePage() {
         </React.Fragment>
     );
 }
-
-export default PeoplePage;

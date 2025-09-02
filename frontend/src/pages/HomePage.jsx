@@ -16,9 +16,10 @@ import Navbar from "../components/Navbar"
 import * as React from 'react';
 import PageTitle from '../components/PageTitle'
 
-function HomePage() {
+export default function HomePage() {
     const [filter, setFilter] = React.useState('incomplete');
     const [sort, setSort] = React.useState('newest');
+
 
     const handleFilter = (event) => { 
         setFilter(event.target.value);
@@ -45,7 +46,9 @@ function HomePage() {
                     }} 
                 >
                     <Toolbar>
-                        <TextField id="outlined-search" label="Search" type="search"/>
+                        <Typography>
+                            <TextField id="outlined-search" label="Search" type="search"/>
+                        </Typography>
                         <FormControl>
                                 <InputLabel id="filter-label">Filter</InputLabel>
                                 <Select
@@ -102,5 +105,3 @@ function HomePage() {
         </React.Fragment>
     );
 }
-
-export default HomePage;

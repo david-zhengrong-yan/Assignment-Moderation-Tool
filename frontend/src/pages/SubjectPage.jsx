@@ -9,7 +9,7 @@ import Navbar from "../components/Navbar"
 import * as React from 'react';
 import PageTitle from "../components/PageTitle";
 
-function SubjectPage() {
+export default function SubjectPage() {
     // const [filter, setFilter] = React.useState();
     // const [sort, setSort] = React.useState();
 
@@ -72,5 +72,3 @@ function SubjectPage() {
         </React.Fragment>
     );
 }
-
-export default SubjectPage;

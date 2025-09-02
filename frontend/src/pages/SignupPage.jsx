@@ -20,7 +20,7 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Topbar from "../components/Topbar";
 
-function SignupPage() {
+export default function SignupPage() {
     const [showPassword, setShowPassword] = React.useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
     const [role, setRole] = React.useState("marker");
@@ -197,5 +197,3 @@ function SignupPage() {
         
     )
 }
-
-export default SignupPage
