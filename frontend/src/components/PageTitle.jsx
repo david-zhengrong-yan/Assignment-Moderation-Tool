@@ -12,7 +12,7 @@ export default function PageTitle(props) {
         <AppBar position="fixed"
             sx={{
                 bgcolor : "white",
-                height : "10%",
+                height : "20%",
                 padding : 1.5,
             }}
             elevation={0}

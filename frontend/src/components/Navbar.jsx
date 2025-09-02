@@ -21,64 +21,64 @@ import PersonIcon from "@mui/icons-material/Person";
 
 export default function Navbar() {
     return (
-
-        <Drawer
-            variant="permanent"
-            slotProps={{
-                root: {
-                keepMounted: true, // Better open performance on mobile.
-                },
-                paper : {
-                    sx : {
-                        width: 200,
-                        bgcolor : "#484E58",
+        <Box component="nav">
+            <Drawer
+                variant="permanent"
+                slotProps={{
+                    root: {
+                    keepMounted: true, // Better open performance on mobile.
+                    },
+                    paper : {
+                        sx : {
+                            width: 200,
+                            bgcolor : "#484E58",
+                        }
                     }
-                }
-            }}
-        >
-            <Box
+                }}
             >
-                 <Avatar 
-                    variant="square"
-                    sx={{ 
-                        m : "auto",
-                        mt : 5,
-                        bgcolor : "white",
-                    }} 
-                    style={{
-                        width : 70,
-                        height : 70,
-                        
-                    }}
+                <Box
                 >
-                    <PersonIcon 
-                        sx={{
-                            width : "100%",
-                            height: "100%",
-                            fontSize: "inherit",
+                    <Avatar 
+                        variant="square"
+                        sx={{ 
+                            m : "auto",
+                            mt : 5,
                             bgcolor : "white",
-                            color : "grey"
+                        }} 
+                        style={{
+                            width : 70,
+                            height : 70,
+                            
                         }}
-                    />
-                </Avatar>
-            </Box>
-               
-            <List sx={{ mt : 1 }}>
-                {['Account', 'Assignments', 'People', 'Subjects'].map((text) => (
-                <ListItem key={text} disablePadding>
-                    <ListItemButton>
-                    <ListItemText 
-                        primary={text} 
-                        sx={{
-                            textAlign :  "center",
-                            color : "white"
-                        }}
-                    />
-                    </ListItemButton>
-                </ListItem>
-                ))}
-            </List>
-        </Drawer>
-
+                    >
+                        <PersonIcon 
+                            sx={{
+                                width : "100%",
+                                height: "100%",
+                                fontSize: "inherit",
+                                bgcolor : "white",
+                                color : "grey"
+                            }}
+                        />
+                    </Avatar>
+                </Box>
+                
+                <List sx={{ mt : 1 }}>
+                    {['Account', 'Assignments', 'People', 'Subjects'].map((text) => (
+                    <ListItem key={text} disablePadding>
+                        <ListItemButton>
+                        <ListItemText 
+                            primary={text} 
+                            sx={{
+                                textAlign :  "center",
+                                color : "white"
+                            }}
+                        />
+                        </ListItemButton>
+                    </ListItem>
+                    ))}
+                </List>
+            </Drawer>
+        </Box>
     );
 }

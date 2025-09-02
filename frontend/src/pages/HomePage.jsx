@@ -11,12 +11,21 @@ import {
     Grid,
     Toolbar,
     AppBar,
+    Paper
 } from "@mui/material";
 import Navbar from "../components/Navbar"
 import * as React from 'react';
 import PageTitle from '../components/PageTitle'
 
 export default function HomePage() {
+    const paperStyle = {
+        bgcolor : "#E5E5E5",
+        width : 250,
+        height : 140,
+        borderRadius : 2,
+        textAlign : "left",
+        padding : 3,
+    }
     const [filter, setFilter] = React.useState('incomplete');
     const [sort, setSort] = React.useState('newest');
 
@@ -29,6 +38,10 @@ export default function HomePage() {
         setSort(event.target.value);
     };
 
+    const handleSearch = (event) => {
+        console.log(event.target.value);
+    }
+
 
     return (
         <React.Fragment>
@@ -36,20 +49,18 @@ export default function HomePage() {
             <Container sx={{ bgcolor : "white" }}>
                 <Navbar />
                 <PageTitle value="Assignments" />
-
+                
                 <AppBar 
                     elevation={0}
                     sx={{ 
                         mt : 20, 
-                        pl : "250px",
+                        pl : "240px",
                         bgcolor : "white"
                     }} 
                 >
                     <Toolbar>
-                        <Typography>
-                            <TextField id="outlined-search" label="Search" type="search"/>
-                        </Typography>
-                        <FormControl>
+                        <TextField id="outlined-search" label="Search" type="search" sx={{mr : "25%", width : "50%"}} onChange={handleSearch}/>
+                        <FormControl sx={{mr : 5, width : "10%"}}>
                                 <InputLabel id="filter-label">Filter</InputLabel>
                                 <Select
                                     labelId="filter-label"
@@ -72,7 +83,7 @@ export default function HomePage() {
                                     <MenuItem value="incomplete">Incomplete</MenuItem>
                                 </Select>
                         </FormControl>
-                        <FormControl>
+                        <FormControl sx={{width : "10%"}}>
                             <InputLabel id="sort-label">Sort by</InputLabel>
                             <Select
                                 labelId="sort-label"
@@ -97,10 +108,50 @@ export default function HomePage() {
                             </Select>
                         </FormControl>
                     </Toolbar>
-
                 </AppBar>
 
-                
+                <Box
+                    sx={{
+                        display : "flex",
+                        flexDirection : "row",
+                        flexWrap : "wrap",
+                        mt: 20,
+                        ml: "20%",
+                        bgcolor : 'gray',
+                        borderRadius : 1,
+                        alignContent : 'flex-start',
+                        maxWidth : 2000,
+                    }}
+                >
+                    <Paper
+                        sx={paperStyle}
+                    >
+                        <Typography variant="h5" sx={{mb : 3}}>Subject1</Typography>
+                        <Typography>Subject Code</Typography>
+                        <Typography>Number of Assignments</Typography>
+                    </Paper>
+                    <Paper
+                        sx={paperStyle}
+                    >
+                        <Typography variant="h5" sx={{mb : 3}}>Subject1</Typography>
+                        <Typography>Subject Code</Typography>
+                        <Typography>Number of Assignments</Typography>
+                    </Paper>
+                    <Paper
+                        sx={paperStyle}
+                    >
+                        <Typography variant="h5" sx={{mb : 3}}>Subject1</Typography>
+                        <Typography>Subject Code</Typography>
+                        <Typography>Number of Assignments</Typography>
+                    </Paper>
+                    <Paper
+                        sx={paperStyle}
+                    >
+                        <Typography variant="h5" sx={{mb : 3}}>Subject1</Typography>
+                        <Typography>Subject Code</Typography>
+                        <Typography>Number of Assignments</Typography>
+                    </Paper>
+                </Box>
             </Container>
         </React.Fragment>
     );
