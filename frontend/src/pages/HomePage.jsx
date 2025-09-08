@@ -1,158 +1,124 @@
-import { 
-    Container,
-    CssBaseline,
-    Typography,
-    Box,
-    TextField,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    Grid,
-    Toolbar,
-    AppBar,
-    Paper
+import {
+  CssBaseline,
+  Typography,
+  Box,
+  Paper
 } from "@mui/material";
-import Navbar from "../components/Navbar"
-import * as React from 'react';
-import PageTitle from '../components/PageTitle'
+import Navbar from "../components/Navbar";
+import * as React from "react";
+import PageTitle from "../components/PageTitle";
 
-export default function HomePage() {
-    const paperStyle = {
-        bgcolor : "#E5E5E5",
-        width : 250,
-        height : 140,
-        borderRadius : 2,
-        textAlign : "left",
-        padding : 3,
-    }
-    const [filter, setFilter] = React.useState('incomplete');
-    const [sort, setSort] = React.useState('newest');
+export default function HomePage({ role = "marker" }) { //  默认 marker，可以传 "admin"
+  const [filter, setFilter] = React.useState("all");
+  const [sort, setSort] = React.useState("a-z");
+  const [search, setSearch] = React.useState("");
+  const [appBarHeight, setAppBarHeight] = React.useState(0);
 
+  const handleSearch = (event) => setSearch(event.target.value.toLowerCase());
 
-    const handleFilter = (event) => { 
-        setFilter(event.target.value);
-    };
+  const subjects = [
+    { name: "Mathematics", code: "MATH101", assignments: 5 },
+    { name: "Computer Science", code: "CS102", assignments: 8 },
+    { name: "Physics", code: "PHY201", assignments: 6 },
+    { name: "Chemistry", code: "CHEM110", assignments: 4 },
+    { name: "Biology", code: "BIO120", assignments: 7 },
+    { name: "History", code: "HIS210", assignments: 3 },
+    { name: "English Literature", code: "ENG150", assignments: 9 },
+    { name: "Economics", code: "ECO200", assignments: 6 }
+  ];
 
-    const handleSort = (event) => {
-        setSort(event.target.value);
-    };
+  const filteredSubjects = subjects
+    .filter(
+      (s) =>
+        s.name.toLowerCase().includes(search) ||
+        s.code.toLowerCase().includes(search)
+    )
+    .filter((s) => {
+      if (filter === "completed") return s.assignments > 5;
+      if (filter === "incomplete") return s.assignments <= 5;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sort === "a-z") return a.name.localeCompare(b.name);
+      if (sort === "z-a") return b.name.localeCompare(a.name);
+      if (sort === "newest") return b.assignments - a.assignments;
+      if (sort === "oldest") return a.assignments - b.assignments;
+      return 0;
+    });
 
-    const handleSearch = (event) => {
-        console.log(event.target.value);
-    }
+  // 卡片参数（保持不变）
+  const cardWidth = 250;
+  const cardHeight = 140;
 
+  return (
+    <React.Fragment>
+      <CssBaseline />
+      <Box sx={{ bgcolor: "white", display: "flex" }}>
+        <Navbar />
+        <Box sx={{ flex: 1, pl: 0, pr: 0, pt: `${appBarHeight}px` }}>
+          <PageTitle
+            value="Assignments"
+            filter={filter}
+            setFilter={setFilter}
+            sort={sort}
+            setSort={setSort}
+            handleSearch={handleSearch}
+            setAppBarHeight={setAppBarHeight}
+          />
 
-    return (
-        <React.Fragment>
-            <CssBaseline />
-            <Container sx={{ bgcolor : "white" }}>
-                <Navbar />
-                <PageTitle value="Assignments" />
-                
-                <AppBar 
-                    elevation={0}
-                    sx={{ 
-                        mt : 20, 
-                        pl : "240px",
-                        bgcolor : "white"
-                    }} 
-                >
-                    <Toolbar>
-                        <TextField id="outlined-search" label="Search" type="search" sx={{mr : "25%", width : "50%"}} onChange={handleSearch}/>
-                        <FormControl sx={{mr : 5, width : "10%"}}>
-                                <InputLabel id="filter-label">Filter</InputLabel>
-                                <Select
-                                    labelId="filter-label"
-                                    id="select-role"
-                                    value={filter}
-                                    label="Filter"
-                                    onChange={handleFilter}
-                                    slotProps={{
-                                        input : {
-                                            sx : {
-                                                bgcolor : "white",
-                                                color : "black",
-                                                textAlign : "left",
-                                            }
-                                        }
-                                    }}
-                                >
-                                    <MenuItem value="all">All</MenuItem>
-                                    <MenuItem value="completed">Complete</MenuItem>
-                                    <MenuItem value="incomplete">Incomplete</MenuItem>
-                                </Select>
-                        </FormControl>
-                        <FormControl sx={{width : "10%"}}>
-                            <InputLabel id="sort-label">Sort by</InputLabel>
-                            <Select
-                                labelId="sort-label"
-                                id="select-role"
-                                value={sort}
-                                label="Sort by"
-                                onChange={handleSort}
-                                slotProps={{
-                                    input : {
-                                        sx : {
-                                            bgcolor : "white",
-                                            color : "black",
-                                            textAlign : "left",
-                                        }
-                                    }
-                                }}
-                            >
-                                <MenuItem value="a-z">A-Z</MenuItem>
-                                <MenuItem value="z-a">Z-A</MenuItem>
-                                <MenuItem value="newest">Newest</MenuItem>
-                                <MenuItem value="oldest">Oldest</MenuItem>
-                            </Select>
-                        </FormControl>
-                    </Toolbar>
-                </AppBar>
+          {/* 卡片区域：Grid 布局 */}
+          <Box
+            sx={{
+              mt: "-400px", // 让卡片在 AppBar 下方
+              display: "grid",
+              gridTemplateColumns: "repeat(5, 150px)", // 每行 5 张卡片
+              gap: 15,
+              justifyContent: "flex-start", // 靠左
+              alignItems: "start",
+            }}
+          >
+            {filteredSubjects.map((s, index) => (
+              <Paper
+                key={index}
+                sx={{
+                  width: cardWidth,
+                  height: cardHeight,
+                  bgcolor: "#E5E5E5",
+                  borderRadius: 2,
+                  textAlign: "left",
+                  padding: 3,
+                }}
+              >
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  {s.name}
+                </Typography>
+                <Typography>{s.code}</Typography>
+                <Typography>{s.assignments} Assignments</Typography>
+              </Paper>
+            ))}
 
-                <Box
-                    sx={{
-                        display : "flex",
-                        flexDirection : "row",
-                        flexWrap : "wrap",
-                        mt: 20,
-                        ml: "20%",
-                        bgcolor : 'gray',
-                        borderRadius : 1,
-                        alignContent : 'flex-start',
-                        maxWidth : 2000,
-                    }}
-                >
-                    <Paper
-                        sx={paperStyle}
-                    >
-                        <Typography variant="h5" sx={{mb : 3}}>Subject1</Typography>
-                        <Typography>Subject Code</Typography>
-                        <Typography>Number of Assignments</Typography>
-                    </Paper>
-                    <Paper
-                        sx={paperStyle}
-                    >
-                        <Typography variant="h5" sx={{mb : 3}}>Subject1</Typography>
-                        <Typography>Subject Code</Typography>
-                        <Typography>Number of Assignments</Typography>
-                    </Paper>
-                    <Paper
-                        sx={paperStyle}
-                    >
-                        <Typography variant="h5" sx={{mb : 3}}>Subject1</Typography>
-                        <Typography>Subject Code</Typography>
-                        <Typography>Number of Assignments</Typography>
-                    </Paper>
-                    <Paper
-                        sx={paperStyle}
-                    >
-                        <Typography variant="h5" sx={{mb : 3}}>Subject1</Typography>
-                        <Typography>Subject Code</Typography>
-                        <Typography>Number of Assignments</Typography>
-                    </Paper>
-                </Box>
-            </Container>
-        </React.Fragment>
-    );
+            {/*  只有 Admin 才能看到加号卡片 */}
+            {role === "admin" && (
+              <Paper
+                sx={{
+                  width: cardWidth,
+                  height: cardHeight,
+                  bgcolor: "#E5E5E5",
+                  borderRadius: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "3rem",
+                  cursor: "pointer",
+                }}
+                onClick={() => alert("Add new assignment")}
+              >
+                +
+              </Paper>
+            )}
+          </Box>
+        </Box>
+      </Box>
+    </React.Fragment>
+  );
 }
