@@ -9,6 +9,7 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import PeoplePage from './pages/PeoplePage';
 import SubjectPage from './pages/SubjectPage';
+import AccountPage from './pages/AccountPage';
 
 function App() {
   return (
@@ -20,7 +21,8 @@ function App() {
         <Route path="/admin-login" element={<LoginPage />} />
         <Route path="/marker-login" element={<LoginPage />} />
         <Route path="/peoples" element={<PeoplePage />} />
-        <Route path="/subjects" element={<SubjectPage />} />
+        <Route path="/account" element={<AccountPage />} />
+        {/* <Route path="/subjects" element={<SubjectPage />} /> */}
       </Routes>
     </>
   );
