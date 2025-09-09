@@ -11,7 +11,8 @@ import {
     Link,
     InputAdornment,
     IconButton,
-    CssBaseline} from "@mui/material";
+    CssBaseline,
+    Snackbar} from "@mui/material";
 import { useLocation, Link as RouterLink} from "react-router";
 import * as React from 'react';
 import Visibility from '@mui/icons-material/Visibility';
@@ -19,11 +20,18 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Topbar from "../components/Topbar";
 
 export default function LoginPage() {
-    const [showPassword, setShowPassword] = React.useState(false);
-
     const location = useLocation();
+    console.log(location.state == undefined);
+    const [showPassword, setShowPassword] = React.useState(false);
+    const [open, setOpen] = React.useState(location.state == undefined ? false : true);
+    const [message, setMessage] = React.useState(location.state == undefined ? "" : "Sign up successfully!");
+
+    
     const currentPathname = location.pathname;
     const routeName = currentPathname.split('/').pop();
+
+    const handleClose = () => { setOpen(false); };
+
     const handleSubmit = () => { 
         if(routeName === "admin-login") {
             console.log(routeName);
@@ -34,7 +42,6 @@ export default function LoginPage() {
         }
     };
 
-    
 
     return (
         <React.Fragment>
@@ -164,7 +171,13 @@ export default function LoginPage() {
                         </Box>
                     </Paper>
                 </Container>
-
+                {/* Notification Bar */}
+                <Snackbar
+                    open={open}
+                    onClose={handleClose}
+                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                    message={message}
+                />
             </Container>
         </React.Fragment>
         

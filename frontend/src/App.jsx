@@ -20,6 +20,7 @@ function App() {
         <Route path="/home" element={ <HomePage /> } />
         <Route path="/admin-login" element={<LoginPage />} />
         <Route path="/marker-login" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/peoples" element={<PeoplePage />} />
         <Route path="/account" element={<AccountPage />} />
         {/* <Route path="/subjects" element={<SubjectPage />} /> */}

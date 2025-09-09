@@ -16,17 +16,18 @@ import {
     CssBaseline,
     Snackbar,
     Alert} from "@mui/material";
-import { Link as RouterLink} from "react-router";
+import { useNavigate, Link as RouterLink} from "react-router";
 import * as React from "react";
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Topbar from "../components/Topbar";
 
 export default function SignupPage() {
+    const navigate = useNavigate();
+
     const [showPassword, setShowPassword] = React.useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
     
-   
     const [name, setName] = React.useState("");
     const [staffId, setStaffId] = React.useState("");
     const [email, setEmail] = React.useState("");
@@ -67,7 +68,7 @@ export default function SignupPage() {
     };
 
 
-    const handleSubmit = () => { 
+    const handleSubmit = async () => { 
         if (name.length === 0) {
             setError(true);
             setErrorMessage("Please enter your name!");
@@ -100,18 +101,36 @@ export default function SignupPage() {
                 role : role,
             });
 
-            fetch( "http://localhost:8000/signup", {
-                mode: 'cors',
-                method: 'POST',
-                headers : {
-                    'Content-Type' : 'application/json',
-                },
-                body : JSON.stringify(signupData),
+            try {
+                const response =  await fetch("http://localhost:8000/signup", {
+                                            mode: 'cors',
+                                            method: 'POST',
+                                            headers : {
+                                                'Content-Type' : 'application/json',
+                                            },
+                                            body : JSON.stringify(signupData),
+                                        });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const responseData = await response.json();
+                console.log('Success', responseData);
+
+                if (responseData['error'] != undefined) {
+                    setError(true);
+                    setErrorMessage("User has already been registered by staff ID or email!");
+                }
+                else
+                {
+                    navigate("/login", { state : { from : "signup" } })
+                }
+
+                
+            } catch (error) {
+                console.error("Error:", error);
             }
-            )
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error("Error:", error))
         }
 
         console.log("login");
