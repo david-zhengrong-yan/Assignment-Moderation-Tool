@@ -24,7 +24,11 @@ You'll be building a digital solution that transforms this manual, time-consumin
 
 ## Frontend
 
+We use JavaScript, React, and MUI
+
 ## Backend
+
+We use Python and Django
 
 ## Deployment
 
