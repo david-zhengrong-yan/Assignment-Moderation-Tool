@@ -91,6 +91,7 @@ export default function SignupPage() {
             setError(true);
             setErrorMessage("Passwords are not match!");
         } else {
+            console.log(role);
             setError(false);
             setErrorMessage("");
             setSignupData({
@@ -111,23 +112,19 @@ export default function SignupPage() {
                                             body : JSON.stringify(signupData),
                                         });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                // Always try to parse the JSON body
+                const data = await response.json().catch(() => null);
 
-                const responseData = await response.json();
-                console.log('Success', responseData);
 
-                if (responseData['error'] != undefined) {
+                if (!data.successful) {
+                    // Registration failed
                     setError(true);
-                    setErrorMessage("User has already been registered by staff ID or email!");
+                    setErrorMessage(data.message || "Registration failed!");
+                } else {
+                    // Registration succeeded
+                    console.log("Success:", data.message);
+                    navigate("/login", { state: { from: "signup" } });
                 }
-                else
-                {
-                    navigate("/login", { state : { from : "signup" } })
-                }
-
-                
             } catch (error) {
                 console.error("Error:", error);
             }
@@ -156,7 +153,6 @@ export default function SignupPage() {
                         </Typography>
                         <Box 
                         component="form" 
-                        onSubmit={handleSubmit}
                         noValidate
                         sx={{ mt: 1}}
                         >

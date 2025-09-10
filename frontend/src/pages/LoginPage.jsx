@@ -21,24 +21,41 @@ import Topbar from "../components/Topbar";
 
 export default function LoginPage() {
     const location = useLocation();
-    console.log(location.state == undefined);
+    const [isRedirected, ] = React.useState(location.state == undefined);
     const [showPassword, setShowPassword] = React.useState(false);
-    const [open, setOpen] = React.useState(location.state == undefined ? false : true);
-    const [message, setMessage] = React.useState(location.state == undefined ? "" : "Sign up successfully!");
+    const [open, setOpen] = React.useState(isRedirected ? false : true);
+    const [message, setMessage] = React.useState(isRedirected ? "" : "Sign up successfully!");
+    const [error, setError] = React.useState(false);
+    const [errorMessage, setErrorMessage] = React.useState("");
 
-    
+    const [email, setEmail] = React.useState("");
+    const [password, setPassword] = React.useState("");
+
     const currentPathname = location.pathname;
     const routeName = currentPathname.split('/').pop();
 
     const handleClose = () => { setOpen(false); };
+    const handleEmail = (event) => { setEmail(event.target.value); };
+    const handlePassword = (event) => { setPassword(event.target.value); };
 
-    const handleSubmit = () => { 
-        if(routeName === "admin-login") {
-            console.log(routeName);
-        }
+    const handleSubmit = async () => { 
+        const response = await fetch("http://localhost:8000/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                email: email,
+                password: password,
+            }),
+        });
 
-        if (routeName === "marker-login") {
-            console.log(routeName);
+        const data = await response.json();
+
+        if (!data.successful) {
+            setError(true);
+            setErrorMessage(data.message);
+        } else {
+            console.log("Login successful:", data);
+            // Save token or user info to state/localStorage
         }
     };
 
@@ -76,11 +93,10 @@ export default function LoginPage() {
                                 mb : "50px",
                             }}
                         >
-                            {routeName==="marker-login" ? "Marker" : "Administrator"} Login
+                            Login
                         </Typography>
                         <Box 
                         component="form" 
-                        onSubmit={handleSubmit}
                         noValidate
                         sx={{ mt: 1}}
                         >
@@ -98,12 +114,16 @@ export default function LoginPage() {
                                         }
                                     }
                                 }}
+                                value={ email }
+                                onChange={ handleEmail }
                             />
                             <TextField 
                                 placeholder="Enter password" 
                                 fullWidth
                                 required
                                 type={showPassword ? "text" : "password"}
+                                value={ password }
+                                onChange={ handlePassword }
                                 slotProps={{
                                     input : {
                                         endAdornment : (
@@ -137,7 +157,6 @@ export default function LoginPage() {
                             </Box>
                             
                             <Button 
-                                type="submit" 
                                 variant="contained" 
                                 sx={{ 
                                     mt : 5,
@@ -146,6 +165,7 @@ export default function LoginPage() {
                                     borderRadius: 10,
                                     width : 100,
                                 }}
+                                onClick={ handleSubmit }
                             
                             >
                                 Login
