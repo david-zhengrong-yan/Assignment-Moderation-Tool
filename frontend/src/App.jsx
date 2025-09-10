@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage';
 import PeoplePage from './pages/PeoplePage';
 import SubjectPage from './pages/SubjectPage';
 import AccountPage from './pages/AccountPage';
+import AssignmentPage from './pages/AssignmentPage';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/peoples" element={<PeoplePage />} />
         <Route path="/account" element={<AccountPage />} />
+        <Route path="/assignment" element={<AssignmentPage />} />
         {/* <Route path="/subjects" element={<SubjectPage />} /> */}
       </Routes>
     </>
