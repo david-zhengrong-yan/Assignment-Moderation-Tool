@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Box,
   Avatar,
@@ -24,19 +24,94 @@ export default function EditAccountPage() {
     email: "user@example.com",
     password: "",
     confirmPassword: "",
-    profilePicture: null, // new field to store file
+    profilePicture: null,
   });
 
+  const [initialForm] = useState({ ...form }); // for detecting changes
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
+  const [fileError, setFileError] = useState("");
+
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+  const MAX_DIMENSION = 400; // px
+
+  // Resize and compress image
+  const resizeImage = (file) =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_DIMENSION) {
+            height = (height * MAX_DIMENSION) / width;
+            width = MAX_DIMENSION;
+          }
+        } else {
+          if (height > MAX_DIMENSION) {
+            width = (width * MAX_DIMENSION) / height;
+            height = MAX_DIMENSION;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => resolve(new File([blob], file.name, { type: file.type })),
+          file.type,
+          0.8
+        );
+      };
+      img.onerror = (err) => reject(err);
+      img.src = URL.createObjectURL(file);
+    });
+
+  const handleFileChange = async (e) => {
+    setFileError("");
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setFileError("Only JPEG, PNG, or WEBP images are allowed");
+      return;
+    }
+
+    try {
+      const resizedFile = await resizeImage(file);
+      if (resizedFile.size > MAX_FILE_SIZE) {
+        setFileError("File size must be less than 2MB after compression");
+        return;
+      }
+      setForm((s) => ({ ...s, profilePicture: resizedFile }));
+      setPreview(URL.createObjectURL(resizedFile));
+    } catch {
+      setFileError("Failed to process image");
+    }
+  };
+
+  const isFormChanged = () => {
+    const { password, confirmPassword, ...rest } = form;
+    const { password: p2, confirmPassword: c2, ...restInit } = initialForm;
+    return (
+      JSON.stringify(rest) !== JSON.stringify(restInit) ||
+      password !== "" ||
+      confirmPassword !== ""
+    );
+  };
 
   const handleSave = () => {
     if (form.password !== form.confirmPassword) {
       setError("Passwords do not match");
       return;
     }
+    if (fileError) return;
 
-    // Form data to send to backend
     const formData = new FormData();
     formData.append("name", form.name);
     formData.append("staffId", form.staffId);
@@ -48,23 +123,35 @@ export default function EditAccountPage() {
     // TODO: send formData to backend API
     console.log("Form data ready for backend:", formData);
 
-    navigate("/account"); // go back to account page
+    navigate("/"); // Go back to account page
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setForm((s) => ({ ...s, profilePicture: file }));
-      setPreview(URL.createObjectURL(file));
+  const handleCancel = () => {
+    if (isFormChanged()) {
+      const confirmLeave = window.confirm(
+        "You have unsaved changes. Are you sure you want to leave?"
+      );
+      if (!confirmLeave) return;
     }
+    navigate("/");
   };
+
+  // Warn on browser refresh/close
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isFormChanged()) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [form]);
 
   return (
     <Box sx={{ display: "flex", height: "100vh", width: "100vw" }}>
-      {/* Navbar */}
       <Navbar />
 
-      {/* Main content */}
       <Box
         component="main"
         sx={{
@@ -94,7 +181,6 @@ export default function EditAccountPage() {
               {!preview && <PersonIcon sx={{ fontSize: 48, color: "grey.600" }} />}
             </Avatar>
 
-            {/* Upload Button */}
             <IconButton
               color="primary"
               sx={{
@@ -112,15 +198,20 @@ export default function EditAccountPage() {
 
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               ref={fileInputRef}
               style={{ display: "none" }}
               onChange={handleFileChange}
             />
           </Box>
           <Typography variant="caption" sx={{ mt: 1, color: "text.secondary" }}>
-            Click the camera to change profile picture
+            Click the camera to change profile picture (Max 2MB after compression, JPEG/PNG/WEBP)
           </Typography>
+          {fileError && (
+            <Typography variant="caption" sx={{ color: "red", mt: 0.5 }}>
+              {fileError}
+            </Typography>
+          )}
         </Box>
 
         {/* Edit Form */}
@@ -180,7 +271,7 @@ export default function EditAccountPage() {
             <Button
               variant="outlined"
               color="secondary"
-              onClick={() => navigate("/")}
+              onClick={handleCancel}
               sx={{ px: 5, py: 1.5, borderRadius: 3, textTransform: "none" }}
             >
               Cancel

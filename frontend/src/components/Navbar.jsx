@@ -1,8 +1,15 @@
 import * as React from "react";
 import { Box, Drawer, Avatar, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
+import { Link } from "react-router-dom"; // import Link from React Router
 
 export default function Navbar() {
+  const menuItems = [
+    { text: "Account", path: "/account" },
+    { text: "Home", path: "/home" },
+    { text: "People", path: "/people" },
+  ];
+
   return (
     <Drawer
       variant="permanent"
@@ -24,10 +31,16 @@ export default function Navbar() {
       </Box>
 
       <List>
-        {["Account", "Assignments", "People", "Subjects"].map((text) => (
-          <ListItem key={text} disablePadding>
-            <ListItemButton>
-              <ListItemText primary={text} sx={{ textAlign: "center", color: "white" }} />
+        {menuItems.map((item) => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              component={Link} // Use Link as the component
+              to={item.path}    // Route path
+            >
+              <ListItemText
+                primary={item.text}
+                sx={{ textAlign: "center", color: "white" }}
+              />
             </ListItemButton>
           </ListItem>
         ))}

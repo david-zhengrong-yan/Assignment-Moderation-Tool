@@ -1,18 +1,38 @@
+import React, { useState, useRef, useEffect } from "react";
 import {
   CssBaseline,
   Typography,
   Box,
-  Paper
+  Paper,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Toolbar,
+  AppBar,
 } from "@mui/material";
 import Navbar from "../components/Navbar";
-import * as React from "react";
-import PageTitle from "../components/PageTitle";
 
-export default function HomePage({ role = "marker" }) { //  默认 marker，可以传 "admin"
-  const [filter, setFilter] = React.useState("all");
-  const [sort, setSort] = React.useState("a-z");
-  const [search, setSearch] = React.useState("");
-  const [appBarHeight, setAppBarHeight] = React.useState(0);
+export default function HomePage({ role = "admin" }) {
+  const [filter, setFilter] = useState("all");
+  const [sort, setSort] = useState("a-z");
+  const [search, setSearch] = useState("");
+  const [appBarHeight, setAppBarHeight] = useState(0);
+
+  const navbarWidth = 200;
+  const appBarRef = useRef(null);
+
+  useEffect(() => {
+    if (appBarRef.current) {
+      setAppBarHeight(appBarRef.current.offsetHeight);
+      const resizeObserver = new ResizeObserver(() => {
+        setAppBarHeight(appBarRef.current.offsetHeight);
+      });
+      resizeObserver.observe(appBarRef.current);
+      return () => resizeObserver.disconnect();
+    }
+  }, []);
 
   const handleSearch = (event) => setSearch(event.target.value.toLowerCase());
 
@@ -24,7 +44,7 @@ export default function HomePage({ role = "marker" }) { //  默认 marker，可�
     { name: "Biology", code: "BIO120", assignments: 7 },
     { name: "History", code: "HIS210", assignments: 3 },
     { name: "English Literature", code: "ENG150", assignments: 9 },
-    { name: "Economics", code: "ECO200", assignments: 6 }
+    { name: "Economics", code: "ECO200", assignments: 6 },
   ];
 
   const filteredSubjects = subjects
@@ -46,35 +66,100 @@ export default function HomePage({ role = "marker" }) { //  默认 marker，可�
       return 0;
     });
 
-  // 卡片参数（保持不变）
-  const cardWidth = 250;
+  const cardWidth = 240;
   const cardHeight = 140;
+  const cardGap = 12;
 
   return (
-    <React.Fragment>
+    <>
       <CssBaseline />
-      <Box sx={{ bgcolor: "white", display: "flex" }}>
+      <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f5f5f5" }}>
         <Navbar />
-        <Box sx={{ flex: 1, pl: 0, pr: 0, pt: `${appBarHeight}px` }}>
-          <PageTitle
-            value="Assignments"
-            filter={filter}
-            setFilter={setFilter}
-            sort={sort}
-            setSort={setSort}
-            handleSearch={handleSearch}
-            setAppBarHeight={setAppBarHeight}
-          />
 
-          {/* 卡片区域：Grid 布局 */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            ml: `${navbarWidth}px`,
+            boxSizing: "border-box",
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            bgcolor: "#ffffff",
+            overflowY: "auto",
+          }}
+        >
+          {/* Sticky AppBar like PageTitle */}
+          <AppBar
+            ref={appBarRef}
+            position="fixed"
+            elevation={0}
+            sx={{
+              bgcolor: "white",
+              color: "black",
+              borderBottom: "1px solid #ddd",
+              zIndex: (theme) => theme.zIndex.drawer + 1,
+              ml: `${navbarWidth}px`,
+              width: `calc(100% - ${navbarWidth}px)`,
+              px: 3,
+              py: 2,
+              top: 0,
+            }}
+          >
+            <Typography variant="h4" sx={{ mb: 2 }}>
+              Assignments
+            </Typography>
+
+            <Toolbar disableGutters sx={{ display: "flex", gap: 3 }}>
+              <TextField
+                label="Search"
+                type="search"
+                size="small"
+                sx={{ flex: 1, maxWidth: "60%" }}
+                onChange={handleSearch}
+              />
+
+              <FormControl sx={{ width: 150 }} size="small">
+                <InputLabel>Filter</InputLabel>
+                <Select
+                  value={filter}
+                  label="Filter"
+                  onChange={(e) => setFilter(e.target.value)}
+                >
+                  <MenuItem value="all">All</MenuItem>
+                  <MenuItem value="completed">Completed</MenuItem>
+                  <MenuItem value="incomplete">Incomplete</MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControl sx={{ width: 150 }} size="small">
+                <InputLabel>Sort by</InputLabel>
+                <Select
+                  value={sort}
+                  label="Sort by"
+                  onChange={(e) => setSort(e.target.value)}
+                >
+                  <MenuItem value="a-z">A-Z</MenuItem>
+                  <MenuItem value="z-a">Z-A</MenuItem>
+                  <MenuItem value="newest">Newest</MenuItem>
+                  <MenuItem value="oldest">Oldest</MenuItem>
+                </Select>
+              </FormControl>
+            </Toolbar>
+          </AppBar>
+
+          {/* Spacer to avoid overlap */}
+          <Box sx={{ height: `${appBarHeight}px` }} />
+
+          {/* Assignment Grid */}
           <Box
             sx={{
-              mt: "-400px", // 让卡片在 AppBar 下方
+              mt: 3,
+              px: 4,
+              pb: 4,
               display: "grid",
-              gridTemplateColumns: "repeat(5, 150px)", // 每行 5 张卡片
-              gap: 15,
-              justifyContent: "flex-start", // 靠左
-              alignItems: "start",
+              gridTemplateColumns: `repeat(auto-fill, minmax(${cardWidth}px, 1fr))`,
+              gap: cardGap,
             }}
           >
             {filteredSubjects.map((s, index) => (
@@ -84,32 +169,49 @@ export default function HomePage({ role = "marker" }) { //  默认 marker，可�
                   width: cardWidth,
                   height: cardHeight,
                   bgcolor: "#E5E5E5",
-                  borderRadius: 2,
-                  textAlign: "left",
-                  padding: 3,
+                  borderRadius: 3,
+                  p: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  boxShadow: "0 2px 5px rgba(0,0,0,0.08)",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  "&:hover": {
+                    transform: "translateY(-3px)",
+                    boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
+                  },
                 }}
               >
-                <Typography variant="h6" sx={{ mb: 1 }}>
+                <Typography variant="h6" sx={{ mb: 0.5 }}>
                   {s.name}
                 </Typography>
-                <Typography>{s.code}</Typography>
-                <Typography>{s.assignments} Assignments</Typography>
+                <Typography sx={{ fontSize: "0.9rem", color: "text.secondary" }}>
+                  {s.code}
+                </Typography>
+                <Typography sx={{ fontSize: "0.85rem", mt: 0.5 }}>
+                  {s.assignments} Assignments
+                </Typography>
               </Paper>
             ))}
 
-            {/*  只有 Admin 才能看到加号卡片 */}
             {role === "admin" && (
               <Paper
                 sx={{
                   width: cardWidth,
                   height: cardHeight,
                   bgcolor: "#E5E5E5",
-                  borderRadius: 2,
+                  borderRadius: 3,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "3rem",
+                  fontSize: "2.5rem",
                   cursor: "pointer",
+                  boxShadow: "0 2px 5px rgba(0,0,0,0.08)",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  "&:hover": {
+                    transform: "translateY(-3px)",
+                    boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
+                  },
                 }}
                 onClick={() => alert("Add new assignment")}
               >
@@ -119,6 +221,6 @@ export default function HomePage({ role = "marker" }) { //  默认 marker，可�
           </Box>
         </Box>
       </Box>
-    </React.Fragment>
+    </>
   );
 }
