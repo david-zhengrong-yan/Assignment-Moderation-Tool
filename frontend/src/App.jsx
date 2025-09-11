@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage';
 import PeoplePage from './pages/PeoplePage';
 import SubjectPage from './pages/SubjectPage';
 import AccountPage from './pages/AccountPage';
+import EditAccountPage from './pages/EditAccountPage';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/marker-login" element={<LoginPage />} />
         <Route path="/peoples" element={<PeoplePage />} />
         <Route path="/account" element={<AccountPage />} />
+        <Route path="/edit-account" element={ <EditAccountPage />} />
         {/* <Route path="/subjects" element={<SubjectPage />} /> */}
       </Routes>
     </>
