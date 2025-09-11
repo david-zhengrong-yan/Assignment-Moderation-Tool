@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .models import Administrator, Assignment, Mark, Marker, Submission
+from .models import User, Assignment, Mark, Submission
 
 # Create your views here.
 @csrf_exempt
