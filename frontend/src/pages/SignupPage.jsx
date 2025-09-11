@@ -69,7 +69,7 @@ export default function SignupPage() {
         setError(true);
         setErrorMessage(data.message || "Registration failed!");
       } else {
-        navigate("/login", { state: { from: "signup" } });
+        navigate("/login", { state: { successMessage: "Sign up successfully!" } });
       }
     } catch (err) {
       console.error(err);
@@ -96,8 +96,8 @@ export default function SignupPage() {
 
           <Box component="form" noValidate>
             <TextField
-              label="Name"
-              placeholder="Name"
+              label="Username"
+              placeholder="Username"
               fullWidth
               required
               margin="normal"
@@ -176,7 +176,7 @@ export default function SignupPage() {
                 onChange={(e) => setRole(e.target.value)}
                 sx={{ bgcolor: "white", borderRadius: 1 }}
               >
-                <MenuItem value="administrator">Administrator</MenuItem>
+                <MenuItem value="admin">Administrator</MenuItem>
                 <MenuItem value="marker">Marker</MenuItem>
               </Select>
             </FormControl>

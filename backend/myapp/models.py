@@ -6,9 +6,6 @@ from django.contrib.auth.models import AbstractUser
 # ------------------------------
 class User(AbstractUser):
     # Remove default username, use email as login
-    username = None
-    email = models.EmailField(unique=True)
-
     staffid = models.CharField(max_length=64, unique=True)
     profile_picture = models.ImageField(default=None, null=True, blank=True)
 
@@ -19,10 +16,6 @@ class User(AbstractUser):
     ]
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
 
-    # Authentication settings
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []  # No other fields required for superuser creation
-
     def __str__(self):
         return f"{self.email} ({self.role})"
 
@@ -31,6 +24,7 @@ class User(AbstractUser):
 # Assignment Model
 # ------------------------------
 class Assignment(models.Model):
+    name = models.CharField(max_length=64)
     creation_date = models.DateTimeField()
     rubric = models.FileField()
     assignment_file = models.FileField()
@@ -47,7 +41,7 @@ class Assignment(models.Model):
     )
 
     def __str__(self):
-        return f"Assignment {self.id} by {self.administrator}"
+        return f"Assignment {self.name} by {self.administrator}"
 
 
 # ------------------------------

@@ -8,6 +8,7 @@ export default function Navbar() {
     { text: "Account", path: "/account" },
     { text: "Home", path: "/home" },
     { text: "People", path: "/people" },
+    { test: "Logout", path: "/"}
   ];
 
   return (

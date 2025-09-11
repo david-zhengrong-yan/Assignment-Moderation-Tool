@@ -1,15 +1,17 @@
-import React from "react";
 import { Box, Container, Paper, Typography, TextField, Button, Link, InputAdornment, IconButton, CssBaseline, Snackbar } from "@mui/material";
-import { Link as RouterLink, useLocation } from "react-router";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import Topbar, { TOPBAR_HEIGHT } from "../components/Topbar";
+import React, { useEffect } from "react";
+import { useNavigate, useLocation, Link as RouterLink } from "react-router-dom";
+
 
 export default function LoginPage() {
+  const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = React.useState(false);
-  const [open, setOpen] = React.useState(location.state ? true : false);
-  const [message] = React.useState(location.state ? "Sign up successfully!" : "");
+  const [open, setOpen] = React.useState(false);
+  const [message, setMessage] = React.useState("");
   const [error, setError] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -34,6 +36,16 @@ export default function LoginPage() {
       console.log("Login successful:", data);
     }
   };
+
+  useEffect(() => {
+    if (location.state?.successMessage) {
+      setMessage(location.state.successMessage);
+      setOpen(true);
+
+      // Clear the state so Snackbar only shows once
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
 
   return (
     <>

@@ -8,15 +8,11 @@ from .models import User, Assignment, Submission, Mark
 # ------------------------------
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    # Fields to display in the admin list view
-    list_display = ('email', 'role', 'staffid', 'is_staff', 'is_active')
+    list_display = ('username', 'email', 'role', 'staffid')
     list_filter = ('role', 'is_staff', 'is_superuser', 'is_active')
-
-    # Fields to search
     search_fields = ('email', 'staffid')
     ordering = ('email',)
 
-    # Fieldsets for viewing and editing users
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         (_('Personal info'), {'fields': ('staffid', 'profile_picture')}),
@@ -24,13 +20,30 @@ class UserAdmin(BaseUserAdmin):
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
     )
 
-    # Fields for creating a new user
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
             'fields': ('email', 'password1', 'password2', 'role', 'staffid', 'profile_picture', 'is_active', 'is_staff', 'is_superuser')}
         ),
     )
+
+
+# ------------------------------
+# Inline for Marks (inside Submission)
+# ------------------------------
+class MarkInline(admin.TabularInline):  # Or StackedInline for bigger form
+    model = Mark
+    extra = 0  # No empty rows by default
+    autocomplete_fields = ['marker']
+
+
+# ------------------------------
+# Inline for Submissions (inside Assignment)
+# ------------------------------
+class SubmissionInline(admin.TabularInline):
+    model = Submission
+    extra = 0
+    autocomplete_fields = ['assignment']
 
 
 # ------------------------------
@@ -43,6 +56,8 @@ class AssignmentAdmin(admin.ModelAdmin):
     search_fields = ('administrator__email',)
     ordering = ('-creation_date',)
 
+    inlines = [SubmissionInline]  # Show submissions directly in assignment page
+
 
 # ------------------------------
 # Submission Admin
@@ -53,6 +68,8 @@ class SubmissionAdmin(admin.ModelAdmin):
     list_filter = ('assignment',)
     search_fields = ('name', 'assignment__id')
     ordering = ('-id',)
+
+    inlines = [MarkInline]  # Show marks directly in submission page
 
 
 # ------------------------------
