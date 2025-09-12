@@ -59,6 +59,8 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = False  # (True if using https)
 
 ROOT_URLCONF = 'backend.urls'
 

@@ -32,6 +32,7 @@ export default function LoginPage() {
     const response = await fetch("http://localhost:8000/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials : "include",
       body: JSON.stringify({ email, password }),
     });
     const data = await response.json();
@@ -43,7 +44,7 @@ export default function LoginPage() {
       console.log("Login successful:", data);
       setMessage(data.message);
       setOpen(true);
-      navigate(`/${data.id}`);
+      navigate(`/${data.id}/home`);
     }
   };
 

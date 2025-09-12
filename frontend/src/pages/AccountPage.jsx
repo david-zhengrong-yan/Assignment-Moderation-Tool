@@ -5,12 +5,13 @@ import MenuBookIcon from "@mui/icons-material/MenuBook";
 import EventIcon from "@mui/icons-material/Event";
 import DoneIcon from "@mui/icons-material/Done";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import { useNavigate } from "react-router-dom"; // <-- import
+import { useNavigate, useParams } from "react-router-dom"; // <-- import
 
 import Navbar from "../components/Navbar";
 
 export default function AccountPage() {
   const navigate = useNavigate(); // <-- hook for navigation
+  const { userId } = useParams();
 
   const [user] = useState({
     name: "User Name",
@@ -20,7 +21,7 @@ export default function AccountPage() {
   });
 
   const handleEditAccount = () => {
-    navigate("/edit-account")
+    navigate(`/${userId}/account/edit`)
   };
 
   return (
