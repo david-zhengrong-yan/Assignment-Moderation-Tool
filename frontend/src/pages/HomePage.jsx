@@ -185,7 +185,9 @@ export default function HomePage({ role = "admin" }) {
                 <Typography variant="h6" sx={{ mb: 0.5 }}>
                   {s.name}
                 </Typography>
-                <Typography sx={{ fontSize: "0.9rem", color: "text.secondary" }}>
+                <Typography
+                  sx={{ fontSize: "0.9rem", color: "text.secondary" }}
+                >
                   {s.code}
                 </Typography>
                 <Typography sx={{ fontSize: "0.85rem", mt: 0.5 }}>
