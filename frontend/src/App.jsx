@@ -18,12 +18,12 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
-        <Route path="/home" element={<HomePage />} />
+        <Route path="/:userId" element={<HomePage />} />
         <Route path="/peoples" element={<PeoplePage />} />
-        <Route path="/account" element={<AccountPage />} />
-        <Route path="/edit-account" element={<EditAccountPage />} />
-        <Route path="/assignment" element={<AssignmentPage />} />
-        <Route path="/assignment/create" element={<CreateAssignmentPage />} />
+        <Route path="/:userId/account" element={<AccountPage />} />
+        <Route path="/:userId/edit-account" element={<EditAccountPage />} />
+        <Route path="/:userId/assignment/:assignmentId" element={<AssignmentPage />} />
+        <Route path="/:userId/assignment/create" element={<CreateAssignmentPage />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
         <Route path="/people" element={<PeoplePage />} />
       </Routes>

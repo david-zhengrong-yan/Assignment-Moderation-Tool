@@ -1,14 +1,35 @@
 import * as React from "react";
 import { Box, Drawer, Avatar, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
-import { Link } from "react-router-dom"; // import Link from React Router
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 export default function Navbar() {
+  const { userId } = useParams();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/logout", {
+        method: "POST",
+        credentials: "include", // Include session cookies
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (response.ok) {
+        navigate("/login"); // redirect to login
+      } else {
+        console.error("Logout failed");
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+  };
+
   const menuItems = [
-    { text: "Account", path: "/account" },
-    { text: "Home", path: "/home" },
-    { text: "People", path: "/people" },
-    { test: "Logout", path: "/"}
+    { text: "Home", path: `/${userId}` },
+    { text: "Account", path: `/${userId}/account` },
+    { text: "People", path: "/peoples" },
+    { text: "Logout", path: "#", onClick: handleLogout } // Use onClick
   ];
 
   return (
@@ -34,15 +55,21 @@ export default function Navbar() {
       <List>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              component={Link} // Use Link as the component
-              to={item.path}    // Route path
-            >
-              <ListItemText
-                primary={item.text}
-                sx={{ textAlign: "center", color: "white" }}
-              />
-            </ListItemButton>
+            {item.onClick ? (
+              <ListItemButton onClick={item.onClick}>
+                <ListItemText
+                  primary={item.text}
+                  sx={{ textAlign: "center", color: "white" }}
+                />
+              </ListItemButton>
+            ) : (
+              <ListItemButton component={Link} to={item.path}>
+                <ListItemText
+                  primary={item.text}
+                  sx={{ textAlign: "center", color: "white" }}
+                />
+              </ListItemButton>
+            )}
           </ListItem>
         ))}
       </List>

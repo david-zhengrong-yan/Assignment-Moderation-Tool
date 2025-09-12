@@ -13,12 +13,14 @@ import {
   AppBar,
 } from "@mui/material";
 import Navbar from "../components/Navbar";
+import { useParams } from "react-router-dom";
 
 export default function HomePage({ role = "admin" }) {
   const [filter, setFilter] = useState("all");
   const [sort, setSort] = useState("a-z");
   const [search, setSearch] = useState("");
   const [appBarHeight, setAppBarHeight] = useState(0);
+  const { userId } = useParams();
 
   const navbarWidth = 200;
   const appBarRef = useRef(null);
@@ -33,6 +35,15 @@ export default function HomePage({ role = "admin" }) {
       return () => resizeObserver.disconnect();
     }
   }, []);
+
+  // // Fetch assignments for this user
+  // React.useEffect(() => {
+  //   fetch(`http://localhost:8000/users/${userId}/assignments`)
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       console.log("Assignments:", data);
+  //     });
+  // }, [userId]);
 
   const handleSearch = (event) => setSearch(event.target.value.toLowerCase());
 

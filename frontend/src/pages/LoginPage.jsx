@@ -41,6 +41,9 @@ export default function LoginPage() {
       setErrorMessage(data.message);
     } else {
       console.log("Login successful:", data);
+      setMessage(data.message);
+      setOpen(true);
+      navigate(`/${data.id}`);
     }
   };
 

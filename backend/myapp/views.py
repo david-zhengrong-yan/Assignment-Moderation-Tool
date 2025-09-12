@@ -9,6 +9,13 @@ from .models import User, Assignment, Mark, Submission
 
 User = get_user_model()
 
+from django.contrib.auth import authenticate, login, get_user_model
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+User = get_user_model()
+
 @csrf_exempt
 def login_view(request):
     if request.method == "POST":
@@ -22,16 +29,28 @@ def login_view(request):
                 status=400
             )
 
-        # Authenticate user
-        user = authenticate(request, email=email, password=password)
+        # 🔑 First, fetch the user by email
+        try:
+            user_obj = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return JsonResponse(
+                {"successful": False, "message": "Invalid email or password."},
+                status=401
+            )
+
+        # 🔑 Now authenticate using the email as username
+        user = authenticate(request, username=user_obj.username, password=password)
+
         if user is not None:
-            login(request, user)  # Django handles session
+            login(request, user)
             return JsonResponse(
                 {
                     "successful": True,
                     "message": "Login successful",
-                    "role": user.role,
-                    "staffId": user.staffid,
+                    "id": user.id,
+                    "username": getattr(user, "username", ""),  # safe fetch
+                    "role": getattr(user, "role", ""),
+                    "staffId": getattr(user, "staffid", ""),
                     "email": user.email
                 },
                 status=200
@@ -46,6 +65,7 @@ def login_view(request):
         {"successful": False, "message": "Invalid request method."},
         status=405
     )
+
 
 
 @csrf_exempt
@@ -75,6 +95,13 @@ def signup_view(request):
         if not (email and password and staff_id and role):
             return JsonResponse(
                 {"successful": False, "message": "Missing required fields."},
+                status=400
+            )
+        
+        # Check unique username
+        if User.objects.filter(username=name).exists():
+             return JsonResponse(
+                {"successful": False, "message": "Username has already been registered."},
                 status=400
             )
 
@@ -118,6 +145,32 @@ def signup_view(request):
         {"successful": False, "message": "Invalid request method."},
         status=405
     )
+
+@csrf_exempt
+def login_status_view(request):
+    # Check if user is authenticated via Django session
+    if request.user.is_authenticated:
+        user = request.user
+        return JsonResponse(
+            {
+                "successful": True,
+                "message": "User is logged in",
+                "id": user.id,
+                "name": getattr(user, "name", ""),
+                "role": getattr(user, "role", ""),
+                "staffId": getattr(user, "staffid", ""),
+                "email": user.email,
+            },
+            status=200
+        )
+    else:
+        return JsonResponse(
+            {
+                "successful": False,
+                "message": "User is not logged in"
+            },
+            status=401
+        )
 
 
 def show_assignments(request):
