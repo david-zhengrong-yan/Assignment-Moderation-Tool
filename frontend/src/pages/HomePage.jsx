@@ -11,6 +11,7 @@ import {
   MenuItem,
   Toolbar,
   AppBar,
+  Chip,
 } from "@mui/material";
 import Navbar from "../components/Navbar";
 import { useParams } from "react-router-dom";
@@ -36,49 +37,38 @@ export default function HomePage({ role = "admin" }) {
     }
   }, []);
 
-  // // Fetch assignments for this user
-  // React.useEffect(() => {
-  //   fetch(`http://localhost:8000/users/${userId}/assignments`)
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       console.log("Assignments:", data);
-  //     });
-  // }, [userId]);
-
   const handleSearch = (event) => setSearch(event.target.value.toLowerCase());
 
-  const subjects = [
-    { name: "Mathematics", code: "MATH101", assignments: 5 },
-    { name: "Computer Science", code: "CS102", assignments: 8 },
-    { name: "Physics", code: "PHY201", assignments: 6 },
-    { name: "Chemistry", code: "CHEM110", assignments: 4 },
-    { name: "Biology", code: "BIO120", assignments: 7 },
-    { name: "History", code: "HIS210", assignments: 3 },
-    { name: "English Literature", code: "ENG150", assignments: 9 },
-    { name: "Economics", code: "ECO200", assignments: 6 },
+  // Example assignments (later replace with fetch)
+  const assignments = [
+    { name: "Algebra Homework", dueDate: "2025-09-20", completed: false },
+    { name: "Essay on Shakespeare", dueDate: "2025-09-18", completed: true },
+    { name: "Physics Lab Report", dueDate: "2025-09-22", completed: false },
+    { name: "Economics Case Study", dueDate: "2025-09-25", completed: true },
+    { name: "Biology Quiz Prep", dueDate: "2025-09-16", completed: false },
   ];
 
-  const filteredSubjects = subjects
+  const filteredAssignments = assignments
     .filter(
-      (s) =>
-        s.name.toLowerCase().includes(search) ||
-        s.code.toLowerCase().includes(search)
+      (a) =>
+        a.name.toLowerCase().includes(search) ||
+        a.dueDate.toLowerCase().includes(search)
     )
-    .filter((s) => {
-      if (filter === "completed") return s.assignments > 5;
-      if (filter === "incomplete") return s.assignments <= 5;
+    .filter((a) => {
+      if (filter === "completed") return a.completed;
+      if (filter === "incomplete") return !a.completed;
       return true;
     })
     .sort((a, b) => {
       if (sort === "a-z") return a.name.localeCompare(b.name);
       if (sort === "z-a") return b.name.localeCompare(a.name);
-      if (sort === "newest") return b.assignments - a.assignments;
-      if (sort === "oldest") return a.assignments - b.assignments;
+      if (sort === "newest") return new Date(b.dueDate) - new Date(a.dueDate);
+      if (sort === "oldest") return new Date(a.dueDate) - new Date(b.dueDate);
       return 0;
     });
 
-  const cardWidth = 240;
-  const cardHeight = 140;
+  const cardWidth = 260;
+  const cardHeight = 150;
   const cardGap = 12;
 
   return (
@@ -100,7 +90,7 @@ export default function HomePage({ role = "admin" }) {
             overflowY: "auto",
           }}
         >
-          {/* Sticky AppBar like PageTitle */}
+          {/* Sticky AppBar */}
           <AppBar
             ref={appBarRef}
             position="fixed"
@@ -159,7 +149,7 @@ export default function HomePage({ role = "admin" }) {
             </Toolbar>
           </AppBar>
 
-          {/* Spacer to avoid overlap */}
+          {/* Spacer */}
           <Box sx={{ height: `${appBarHeight}px` }} />
 
           {/* Assignment Grid */}
@@ -173,7 +163,7 @@ export default function HomePage({ role = "admin" }) {
               gap: cardGap,
             }}
           >
-            {filteredSubjects.map((s, index) => (
+            {filteredAssignments.map((a, index) => (
               <Paper
                 key={index}
                 sx={{
@@ -184,7 +174,7 @@ export default function HomePage({ role = "admin" }) {
                   p: 2,
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "center",
+                  justifyContent: "space-between",
                   boxShadow: "0 2px 5px rgba(0,0,0,0.08)",
                   transition: "transform 0.2s, box-shadow 0.2s",
                   "&:hover": {
@@ -193,17 +183,21 @@ export default function HomePage({ role = "admin" }) {
                   },
                 }}
               >
-                <Typography variant="h6" sx={{ mb: 0.5 }}>
-                  {s.name}
-                </Typography>
-                <Typography
-                  sx={{ fontSize: "0.9rem", color: "text.secondary" }}
-                >
-                  {s.code}
-                </Typography>
-                <Typography sx={{ fontSize: "0.85rem", mt: 0.5 }}>
-                  {s.assignments} Assignments
-                </Typography>
+                <Box>
+                  <Typography variant="h6">{a.name}</Typography>
+                  <Typography
+                    sx={{ fontSize: "0.9rem", color: "text.secondary" }}
+                  >
+                    Due: {new Date(a.dueDate).toLocaleDateString()}
+                  </Typography>
+                </Box>
+
+                <Chip
+                  label={a.completed ? "Completed" : "Incomplete"}
+                  color={a.completed ? "success" : "warning"}
+                  variant="outlined"
+                  sx={{ alignSelf: "flex-start", mt: 1 }}
+                />
               </Paper>
             ))}
 

@@ -175,15 +175,22 @@ def login_status_view(request):
         )
 
 
-def show_assignments(request):
+def account_view(request):
+    pass
+
+def edit_account_view(request):
+    pass
+
+def show_assignments_view(request):
     return JsonResponse({ "message" : "hello, world!"})
 
-def delete_assignment(request):
+def delete_assignment_view(request):
     return JsonResponse({"message" : "Assignment is deleted"})
 
-def create_assignment(request):
+def create_assignment_view(request):
     print("Assignment is created")
     return JsonResponse({"message" : "Assignment is created"})
 
-def assignment_details(request):
+def assignment_detail_view(request):
+    print("Get single assignment")
     pass
