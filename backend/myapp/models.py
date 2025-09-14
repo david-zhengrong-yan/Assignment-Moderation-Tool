@@ -5,6 +5,7 @@ from django.contrib.auth.models import AbstractUser
 # Custom User Model
 # ------------------------------
 class User(AbstractUser):
+    # username, email, password_hash
     # Remove default username, use email as login
     staffid = models.CharField(max_length=64, unique=True)
     profile_picture = models.ImageField(default=None, null=True, blank=True)
