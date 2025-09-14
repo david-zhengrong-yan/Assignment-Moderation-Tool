@@ -63,7 +63,7 @@ export default function SignupPage() {
     const signupData = { name, staffId, email, password, role };
 
     try {
-      const response = await fetch("http://localhost:8000/signup", {
+      const response = await fetch("http://localhost:8000/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(signupData),
