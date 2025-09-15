@@ -12,7 +12,7 @@ export default function NotFoundPage() {
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
-        const response = await fetch("http://localhost:8000/login_status", {
+        const response = await fetch("http://localhost:8000/api/login_status", {
           method: "GET",
           credentials: "include", // Important: send sessionid cookie
         });

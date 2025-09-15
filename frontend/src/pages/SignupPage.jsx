@@ -25,7 +25,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
-  const [name, setName] = React.useState("");
+  const [username, setUserName] = React.useState("");
   const [staffId, setStaffId] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -43,7 +43,7 @@ export default function SignupPage() {
   const passwordMatch = (password, confirmed) => password === confirmed;
 
   const handleSubmit = async () => {
-    if (!name) return setError(true), setErrorMessage("Please enter your name!");
+    if (!username) return setError(true), setErrorMessage("Please enter your username!");
     if (!staffId)
       return setError(true), setErrorMessage("Please enter the staff ID!");
     if (!email)
@@ -60,7 +60,7 @@ export default function SignupPage() {
     if (!passwordMatch(password, confirmPassword))
       return setError(true), setErrorMessage("Passwords do not match!");
 
-    const signupData = { name, staffId, email, password, role };
+    const signupData = { username, staffId, email, password, role };
 
     try {
       const response = await fetch("http://localhost:8000/api/signup", {
@@ -98,8 +98,8 @@ export default function SignupPage() {
             fullWidth
             required
             margin="normal"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={username}
+            onChange={(e) => setUserName(e.target.value)}
             sx={{ bgcolor: "white", borderRadius: 1 }}
           />
           <TextField

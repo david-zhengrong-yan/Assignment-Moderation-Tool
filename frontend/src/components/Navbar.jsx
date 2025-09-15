@@ -3,13 +3,13 @@ import { Box, Drawer, Avatar, List, ListItem, ListItemButton, ListItemText } fro
 import PersonIcon from "@mui/icons-material/Person";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-export default function Navbar() {
+export default function Navbar(props) {
   const { userId } = useParams();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("http://localhost:8000/logout", {
+      const response = await fetch("http://localhost:8000/api/logout", {
         method: "POST",
         credentials: "include", // Include session cookies
         headers: { "Content-Type": "application/json" },

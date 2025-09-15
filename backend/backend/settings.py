@@ -54,7 +54,10 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 AUTH_USER_MODEL = 'api.User'
+SESSION_COOKIE_SAMESITE = "None"   # allow cross-site
+SESSION_COOKIE_SECURE = False      # set True if using HTTPS
 
 ROOT_URLCONF = 'backend.urls'
 

@@ -87,7 +87,7 @@ def signup_view(request):
     if request.method == "POST":
         signup_info = json.loads(request.body)
 
-        name = signup_info.get("name")
+        username = signup_info.get("username")
         staff_id = signup_info.get("staffId")
         email = signup_info.get("email")
         password = signup_info.get("password")
@@ -101,7 +101,7 @@ def signup_view(request):
             )
         
         # Check unique username
-        if User.objects.filter(username=name).exists():
+        if User.objects.filter(username=username).exists():
              return JsonResponse(
                 {"successful": False, "message": "Username has already been registered."},
                 status=400
@@ -133,7 +133,7 @@ def signup_view(request):
             email=email,
             staffid=staff_id,
             role=role,
-            username=name  # Optional: using built-in Django field
+            username=username  # Optional: using built-in Django field
         )
         new_user.set_password(password)  # hash the password!
         new_user.save()
@@ -158,7 +158,7 @@ def login_status_view(request):
                 "successful": True,
                 "message": "User is logged in",
                 "id": user.id,
-                "name": getattr(user, "name", ""),
+                "username": getattr(user, "username", ""),
                 "role": getattr(user, "role", ""),
                 "staffId": getattr(user, "staffid", ""),
                 "email": user.email,
@@ -174,14 +174,28 @@ def login_status_view(request):
             status=401
         )
 
-
-def account_view(request):
-    pass
+@csrf_exempt
+def account_view(request, id):
+    if request.method == "GET":
+        if request.user.is_authenticated:
+            user = request.user
+            return JsonResponse({
+                "id" : user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": getattr(user, "role", None),
+                "profile_picture": user.profile_picture.url if user.profile_picture else None,
+            })
+        else:
+            return JsonResponse({"successful" : False, "message" : "You need to login first"}, status=401)
 
 def edit_account_view(request):
     pass
 
 def show_assignments_view(request):
+    if request.method == "GET":
+        if not request.user.is_authenticated:
+            return JsonResponse({"successful" : False, "message" : "You need to login first"}, status=401)
     return JsonResponse({ "message" : "hello, world!"})
 
 def delete_assignment_view(request):
