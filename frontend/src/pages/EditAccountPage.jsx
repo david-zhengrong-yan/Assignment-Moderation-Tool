@@ -11,29 +11,66 @@ import {
 import PersonIcon from "@mui/icons-material/Person";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import Navbar from "../components/Navbar";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 export default function EditAccountPage() {
+  const sessionid = localStorage.getItem("sessionid");
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const { userId } = useParams();
 
   const [form, setForm] = useState({
-    name: "User Name",
-    staffId: "S1234567",
-    role: "Marker",
-    email: "user@example.com",
+    username: "",
+    staffId: "",
+    role: "",
+    email: "",
     password: "",
     confirmPassword: "",
     profilePicture: null,
   });
-
-  const [initialForm] = useState({ ...form }); // for detecting changes
+  const [initialForm, setInitialForm] = useState({});
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
   const [fileError, setFileError] = useState("");
 
   const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
   const MAX_DIMENSION = 400; // px
+
+  // Fetch user data from backend
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch(`http://localhost:8000/api/${userId}/account`, {
+          method: "GET",
+          headers: {"X-Session-ID" : sessionid},
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to fetch user data");
+        const data = await res.json();
+        setForm({
+          username: data.username,
+          staffId: data.staffId,
+          role: data.role,
+          email: data.email,
+          password: "",
+          confirmPassword: "",
+          profilePicture: data.profilePicture,
+        });
+        setInitialForm({
+          username: data.username,
+          staffId: data.staffId,
+          role: data.role,
+          email: data.email,
+        });
+        if (data.profilePicture) {
+          setPreview(data.profilePicture);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchUser();
+  }, []);
 
   // Resize and compress image
   const resizeImage = (file) =>
@@ -96,16 +133,16 @@ export default function EditAccountPage() {
   };
 
   const isFormChanged = () => {
-    const { password, confirmPassword, ...rest } = form;
-    const { password: p2, confirmPassword: c2, ...restInit } = initialForm;
+    const { password, confirmPassword, profilePicture, ...rest } = form;
     return (
-      JSON.stringify(rest) !== JSON.stringify(restInit) ||
+      JSON.stringify(rest) !== JSON.stringify(initialForm) ||
       password !== "" ||
-      confirmPassword !== ""
+      confirmPassword !== "" ||
+      profilePicture !== null
     );
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (form.password !== form.confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -113,17 +150,25 @@ export default function EditAccountPage() {
     if (fileError) return;
 
     const formData = new FormData();
-    formData.append("name", form.name);
+    formData.append("username", form.username);
     formData.append("staffId", form.staffId);
     formData.append("role", form.role);
     formData.append("email", form.email);
     if (form.password) formData.append("password", form.password);
     if (form.profilePicture) formData.append("profilePicture", form.profilePicture);
 
-    // TODO: send formData to backend API
-    console.log("Form data ready for backend:", formData);
-
-    navigate("/"); // Go back to account page
+    try {
+      const res = await fetch("http://localhost:8000/api/account/", {
+        method: "PATCH",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to update account");
+      alert("Account updated successfully");
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleCancel = () => {
@@ -133,7 +178,7 @@ export default function EditAccountPage() {
       );
       if (!confirmLeave) return;
     }
-    navigate("/");
+    navigate(`/${userId}/account`);
   };
 
   // Warn on browser refresh/close
@@ -217,9 +262,9 @@ export default function EditAccountPage() {
         {/* Edit Form */}
         <Box sx={{ maxWidth: 600, mx: "auto", display: "flex", flexDirection: "column", gap: 3 }}>
           <TextField
-            label="Full Name"
-            value={form.name}
-            onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
+            label="Username"
+            value={form.username}
+            onChange={(e) => setForm((s) => ({ ...s, username: e.target.value }))}
             fullWidth
           />
 
@@ -244,8 +289,8 @@ export default function EditAccountPage() {
             onChange={(e) => setForm((s) => ({ ...s, role: e.target.value }))}
             fullWidth
           >
-            <MenuItem value="Administrator">Administrator</MenuItem>
-            <MenuItem value="Marker">Marker</MenuItem>
+            <MenuItem value="admin">Administrator</MenuItem>
+            <MenuItem value="marker">Marker</MenuItem>
           </TextField>
 
           <TextField
@@ -266,7 +311,6 @@ export default function EditAccountPage() {
             helperText={error}
           />
 
-          {/* Save & Cancel Buttons */}
           <Box sx={{ display: "flex", justifyContent: "center", gap: 3, mt: 2 }}>
             <Button
               variant="outlined"

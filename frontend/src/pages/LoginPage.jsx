@@ -44,6 +44,7 @@ export default function LoginPage() {
       console.log("Login successful:", data);
       setMessage(data.message);
       setOpen(true);
+      localStorage.setItem('sessionid', data.sessionId);
       navigate(`/${data.id}/home`);
     }
   };

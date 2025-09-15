@@ -16,6 +16,7 @@ export default function Navbar(props) {
       });
 
       if (response.ok) {
+        localStorage.removeItem("sessionid");
         navigate("/login"); // redirect to login
       } else {
         console.error("Logout failed");
@@ -26,7 +27,7 @@ export default function Navbar(props) {
   };
 
   const menuItems = [
-    { text: "Home", path: `/${userId}` },
+    { text: "Home", path: `/${userId}/home` },
     { text: "Account", path: `/${userId}/account` },
     { text: "People", path: "/peoples" },
     { text: "Logout", path: "#", onClick: handleLogout } // Use onClick

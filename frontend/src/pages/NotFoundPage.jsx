@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
 export default function NotFoundPage() {
+  const sessionid = localStorage.getItem("sessionid")
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -14,6 +15,7 @@ export default function NotFoundPage() {
       try {
         const response = await fetch("http://localhost:8000/api/login_status", {
           method: "GET",
+          headers: {"X-Session-ID": sessionid},
           credentials: "include", // Important: send sessionid cookie
         });
 

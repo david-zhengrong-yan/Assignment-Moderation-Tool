@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.contrib.sessions.models import Session
 
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
@@ -43,6 +44,7 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
+            session_id = request.session.session_key
             return JsonResponse(
                 {
                     "successful": True,
@@ -51,7 +53,8 @@ def login_view(request):
                     "username": getattr(user, "username", ""),  # safe fetch
                     "role": getattr(user, "role", ""),
                     "staffId": getattr(user, "staffid", ""),
-                    "email": user.email
+                    "email": user.email,
+                    "sessionId" : session_id
                 },
                 status=200
             )
@@ -151,46 +154,83 @@ def signup_view(request):
 @csrf_exempt
 def login_status_view(request):
     # Check if user is authenticated via Django session
-    if request.user.is_authenticated:
-        user = request.user
-        return JsonResponse(
-            {
-                "successful": True,
-                "message": "User is logged in",
-                "id": user.id,
-                "username": getattr(user, "username", ""),
-                "role": getattr(user, "role", ""),
-                "staffId": getattr(user, "staffid", ""),
-                "email": user.email,
-            },
-            status=200
-        )
-    else:
-        return JsonResponse(
-            {
-                "successful": False,
-                "message": "User is not logged in"
-            },
-            status=401
-        )
+    if request.method == "GET":
+        sessionid = request.headers.get("X-Session-ID")
+        if not sessionid:
+            return JsonResponse(
+                {
+                    "successful": False,
+                    "message": "User is not logged in"
+                },
+                status=401
+            )
+        try:
+            session = Session.objects.get(session_key=sessionid)
+            uid = session.get_decoded().get("_auth_user_id")
+            user = User.objects.get(id=uid)
+            return JsonResponse(
+                {
+                    "successful": True,
+                    "message": "User is logged in",
+                    "id": user.id,
+                    "username": getattr(user, "username", ""),
+                    "role": getattr(user, "role", ""),
+                    "staffId": getattr(user, "staffid", ""),
+                    "email": user.email,
+                },
+                status=200
+            )
+        except:
+            return JsonResponse(
+                {
+                    "successful": False,
+                    "message": "User is not logged in"
+                },
+                status=401
+            )
 
 @csrf_exempt
 def account_view(request, id):
     if request.method == "GET":
-        if request.user.is_authenticated:
-            user = request.user
-            return JsonResponse({
-                "id" : user.id,
-                "username": user.username,
-                "email": user.email,
-                "role": getattr(user, "role", None),
-                "profile_picture": user.profile_picture.url if user.profile_picture else None,
-            })
-        else:
-            return JsonResponse({"successful" : False, "message" : "You need to login first"}, status=401)
+        sessionid = request.headers.get("X-Session-ID")
+        print(sessionid)
+        if not sessionid:
+            return JsonResponse(
+                {
+                    "successful": False,
+                    "message": "User is not logged in"
+                },
+                status=401
+            )
+        try:
+            session = Session.objects.get(session_key=sessionid)
+            uid = session.get_decoded().get("_auth_user_id")
+            user = User.objects.get(id=uid)
+            return JsonResponse(
+                {
+                    "successful": True,
+                    "message": "User is logged in",
+                    "id": user.id,
+                    "username": getattr(user, "username", ""),
+                    "role": getattr(user, "role", ""),
+                    "staffId": getattr(user, "staffid", ""),
+                    "email": user.email,
+                    "profilePicture" : request.build_absolute_uri(user.profile_picture.url) if user.profile_picture else None
+                },
+                status=200
+            )
+        except:
+            return JsonResponse(
+                {
+                    "successful": False,
+                    "message": "User is not logged in"
+                },
+                status=401
+            )
 
 def edit_account_view(request):
-    pass
+    if request.method == "PATCH":
+        pass
 
 def show_assignments_view(request):
     if request.method == "GET":
