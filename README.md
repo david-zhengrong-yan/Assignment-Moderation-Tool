@@ -26,9 +26,29 @@ You'll be building a digital solution that transforms this manual, time-consumin
 
 We use JavaScript, React, and MUI
 
+### Pages
+
+`LoginPage.jsx`
+
+Page for login.
+
+`SignupPage.jsx`
+
+Page for signup, including filling out username, staffId, email, password and role.
+
+`HomePage.jsx`
+
+`AccountPage.jsx`
+
+`EditAccountPage.jsx`
+
+`CreateAssignmentPage.jsx`
+
 ## Backend
 
 We use Python and Django
+
+### APIs
 
 ## Deployment
 
