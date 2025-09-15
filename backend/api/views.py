@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from .models import User, Assignment, Mark, Submission
+from django.db.models import Q
 
 User = get_user_model()
 
@@ -373,9 +374,147 @@ def account_view(request, id):
                 status=401
             )
 
-def edit_account_view(request):
-    if request.method == "PATCH":
-        pass
+@csrf_exempt
+def edit_account_view(request, id):
+    """
+    Edit the account information of the currently logged-in user.
+
+    This view allows a user to update their profile details such as username,
+    staff ID, role, email, password, and profile picture. It verifies the session
+    ID from the request headers to ensure the user is authenticated. It also
+    checks that the email and staff ID are not already used by other users.
+
+    Method:
+        POST: Updates the user's account information with provided data.
+
+    Request Headers:
+        X-Session-ID: string
+            The session key of the logged-in user (required for authentication).
+
+    Request POST Parameters (optional):
+        - username: string
+            New username for the user.
+        - staffId: string
+            New staff ID for the user.
+        - role: string
+            New role for the user.
+        - email: string
+            New email address for the user.
+        - password: string
+            New password for the user.
+        - profilePicture: file
+            New profile picture for the user (optional, multipart/form-data required).
+
+    Response JSON:
+        On success (status 200):
+            {
+                "success": True,
+                "message": "Account edited successfully",
+                "username": <updated username>,
+                "staffId": <updated staff ID>,
+                "role": <updated role>,
+                "email": <updated email>,
+                "profilePicture": <URL of profile picture or None>
+            }
+
+        On failure:
+            401 Unauthorized - User not logged in:
+            {
+                "successful": False,
+                "message": "User is not logged in"
+            }
+
+            400 Bad Request - Email or Staff ID already in use:
+            {
+                "success": False,
+                "message": "Email is already used by another user"
+            }
+            OR
+            {
+                "success": False,
+                "message": "Staff ID is already used by another user"
+            }
+
+            404 Not Found / Other errors:
+            {
+                "successful": False,
+                "message": "Error"
+            }
+
+    Notes:
+        - The view is CSRF exempt (`@csrf_exempt`) because it relies on session headers.
+        - Password updates are handled securely using `set_password()`.
+        - Profile pictures are saved as uploaded files and URL is returned in response.
+        - The function prints the received input values for debugging purposes.
+    """
+    if request.method == "POST":
+        sessionid = request.headers.get("X-Session-ID")
+        if not sessionid:
+            return JsonResponse(
+                {"successful": False, "message": "User is not logged in"},
+                status=401
+            )
+        try:
+            session = Session.objects.get(session_key=sessionid)
+            uid = session.get_decoded().get("_auth_user_id")
+            user = User.objects.get(id=uid)
+
+            # Handle text fields
+            username = request.POST.get("username")
+            staffId = request.POST.get("staffId")
+            role = request.POST.get("role")
+            email = request.POST.get("email")
+            password = request.POST.get("password")
+
+            print(username, staffId, role, email, password)
+
+            # Check if email is used by another user
+            if email and User.objects.filter(email=email.strip()).exclude(id=user.id).exists():
+                return JsonResponse({
+                    "success": False,
+                    "message": "Email is already used by another user"
+                }, status=400)
+
+            # Check if staffId is used by another user
+            if staffId and User.objects.filter(staffid=staffId.strip()).exclude(id=user.id).exists():
+                return JsonResponse({
+                    "success": False,
+                    "message": "Staff ID is already used by another user"
+                }, status=400)
+
+            # Update fields if provided
+            if username is not None:
+                user.username = username.strip()
+            if staffId is not None:
+                user.staffid = staffId.strip()
+            if role is not None:
+                user.role = role.strip()
+            if email is not None:
+                user.email = email.strip()
+            if password:
+                user.set_password(password)
+
+            # Handle profile picture file
+            if "profilePicture" in request.FILES:
+                user.profile_picture = request.FILES["profilePicture"]
+
+            user.save()
+            return JsonResponse({
+                "success": True,
+                "message": "Account edited successfully",
+                "username": user.username,
+                "staffId": user.staffid,
+                "role": user.role,
+                "email": user.email,
+                "profilePicture": user.profile_picture.url if user.profile_picture else None
+            })
+
+        except :
+            return JsonResponse(
+                {"successful": False, "message": "Error"},
+                status=404
+            )
+
 
 def show_assignments_view(request):
     if request.method == "GET":

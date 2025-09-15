@@ -19,6 +19,7 @@ export default function AccountPage() {
     staffId: "S1234567",
     role: "Teacher",
     email: "user@example.com",
+    profilePicture: null
   });
 
   useEffect(() => {
@@ -81,12 +82,10 @@ export default function AccountPage() {
           {/* Avatar + User Name + Account Info */}
           <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", alignItems: "center" }}>
             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <Avatar sx={{ width: 96, height: 96, bgcolor: "grey.100" }}>
+              {/* <Avatar sx={{ width: 96, height: 96, bgcolor: "grey.100" }}>
                 <PersonIcon sx={{ fontSize: 48, color: "grey.600" }} />
-              </Avatar>
-              <Typography variant="caption" sx={{ mt: 1, color: "text.secondary" }}>
-                Edit profile picture
-              </Typography>
+              </Avatar> */}
+              <Avatar sx={{ width: 96, height: 96, bgcolor: "grey.100" }}  src={user.profilePicture}/>
             </Box>
 
             <Box sx={{ flex: 1 }}>

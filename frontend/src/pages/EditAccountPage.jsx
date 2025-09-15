@@ -5,8 +5,9 @@ import {
   Typography,
   TextField,
   Button,
-  MenuItem,
   IconButton,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
@@ -30,23 +31,50 @@ export default function EditAccountPage() {
   });
   const [initialForm, setInitialForm] = useState({});
   const [preview, setPreview] = useState(null);
-  const [error, setError] = useState("");
+  const [passwordError, setPasswordError] = useState(""); // only for confirm password
   const [fileError, setFileError] = useState("");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "error",
+  });
 
   const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
   const MAX_DIMENSION = 400; // px
 
-  // Fetch user data from backend
+  // --- Snackbar helper ---
+  const showSnackbar = (message, severity = "error") => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  // --- Fetch with session + 401 redirect ---
+  const fetchWithAuth = async (url, options = {}) => {
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        "X-Session-ID": sessionid,
+      },
+      credentials: "include",
+    });
+
+    if (res.status === 401) {
+      navigate("/login");
+      return null;
+    }
+
+    return res;
+  };
+
+  // --- Fetch user data ---
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/${userId}/account`, {
-          method: "GET",
-          headers: {"X-Session-ID" : sessionid},
-          credentials: "include",
-        });
+        const res = await fetchWithAuth(`http://localhost:8000/api/${userId}/account`);
+        if (!res) return;
         if (!res.ok) throw new Error("Failed to fetch user data");
         const data = await res.json();
+
         setForm({
           username: data.username,
           staffId: data.staffId,
@@ -54,25 +82,30 @@ export default function EditAccountPage() {
           email: data.email,
           password: "",
           confirmPassword: "",
-          profilePicture: data.profilePicture,
+          profilePicture: null,
         });
+
         setInitialForm({
           username: data.username,
           staffId: data.staffId,
           role: data.role,
           email: data.email,
         });
+
         if (data.profilePicture) {
-          setPreview(data.profilePicture);
+          setPreview(data.profilePicture.startsWith("http")
+            ? data.profilePicture
+            : `http://localhost:8000${data.profilePicture}`);
         }
       } catch (err) {
         console.error(err);
+        showSnackbar(err.message);
       }
     };
     fetchUser();
-  }, []);
+  }, [sessionid, userId, navigate]);
 
-  // Resize and compress image
+  // --- Image resize ---
   const resizeImage = (file) =>
     new Promise((resolve, reject) => {
       const img = new Image();
@@ -108,6 +141,7 @@ export default function EditAccountPage() {
       img.src = URL.createObjectURL(file);
     });
 
+  // --- Handle file selection ---
   const handleFileChange = async (e) => {
     setFileError("");
     const file = e.target.files[0];
@@ -115,23 +149,24 @@ export default function EditAccountPage() {
 
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      setFileError("Only JPEG, PNG, or WEBP images are allowed");
+      showSnackbar("Only JPEG, PNG, or WEBP images are allowed");
       return;
     }
 
     try {
       const resizedFile = await resizeImage(file);
       if (resizedFile.size > MAX_FILE_SIZE) {
-        setFileError("File size must be less than 2MB after compression");
+        showSnackbar("File size must be less than 2MB after compression");
         return;
       }
       setForm((s) => ({ ...s, profilePicture: resizedFile }));
       setPreview(URL.createObjectURL(resizedFile));
     } catch {
-      setFileError("Failed to process image");
+      showSnackbar("Failed to process image");
     }
   };
 
+  // --- Check if form has changed ---
   const isFormChanged = () => {
     const { password, confirmPassword, profilePicture, ...rest } = form;
     return (
@@ -142,46 +177,52 @@ export default function EditAccountPage() {
     );
   };
 
+  // --- Save changes ---
   const handleSave = async () => {
+    setPasswordError("");
+
     if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match");
+      setPasswordError("Passwords do not match");
       return;
     }
-    if (fileError) return;
-
-    const formData = new FormData();
-    formData.append("username", form.username);
-    formData.append("staffId", form.staffId);
-    formData.append("role", form.role);
-    formData.append("email", form.email);
-    if (form.password) formData.append("password", form.password);
-    if (form.profilePicture) formData.append("profilePicture", form.profilePicture);
 
     try {
-      const res = await fetch("http://localhost:8000/api/account/", {
-        method: "PATCH",
+      const formData = new FormData();
+      formData.append("username", form.username);
+      formData.append("staffId", form.staffId);
+      formData.append("role", form.role);
+      formData.append("email", form.email);
+      if (form.password) formData.append("password", form.password);
+      if (form.profilePicture instanceof File) {
+        formData.append("profilePicture", form.profilePicture);
+      }
+
+      const res = await fetchWithAuth(`http://localhost:8000/api/${userId}/account/edit`, {
+        method: "POST",
         body: formData,
-        credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to update account");
-      alert("Account updated successfully");
-      navigate("/");
+      if (!res) return; // redirected due to 401
+      if (!res.ok) {
+        const errData = await res.json();
+        showSnackbar(errData.message || "Failed to update account");
+        return;
+      }
+
+      showSnackbar("Account updated successfully", "success");
+      navigate(`/${userId}/account`);
     } catch (err) {
       console.error(err);
+      showSnackbar(err.message);
     }
   };
 
+  // --- Cancel editing ---
   const handleCancel = () => {
-    if (isFormChanged()) {
-      const confirmLeave = window.confirm(
-        "You have unsaved changes. Are you sure you want to leave?"
-      );
-      if (!confirmLeave) return;
-    }
+    if (isFormChanged() && !window.confirm("You have unsaved changes. Leave anyway?")) return;
     navigate(`/${userId}/account`);
   };
 
-  // Warn on browser refresh/close
+  // --- Warn on browser refresh/close ---
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (isFormChanged()) {
@@ -196,7 +237,6 @@ export default function EditAccountPage() {
   return (
     <Box sx={{ display: "flex", height: "100vh", width: "100vw" }}>
       <Navbar />
-
       <Box
         component="main"
         sx={{
@@ -216,7 +256,7 @@ export default function EditAccountPage() {
           Edit Account
         </Typography>
 
-        {/* Avatar with Upload */}
+        {/* Avatar */}
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 4 }}>
           <Box sx={{ position: "relative" }}>
             <Avatar
@@ -249,14 +289,10 @@ export default function EditAccountPage() {
               onChange={handleFileChange}
             />
           </Box>
+
           <Typography variant="caption" sx={{ mt: 1, color: "text.secondary" }}>
-            Click the camera to change profile picture (Max 2MB after compression, JPEG/PNG/WEBP)
+            Click the camera to change profile picture (Max 2MB, JPEG/PNG/WEBP)
           </Typography>
-          {fileError && (
-            <Typography variant="caption" sx={{ color: "red", mt: 0.5 }}>
-              {fileError}
-            </Typography>
-          )}
         </Box>
 
         {/* Edit Form */}
@@ -267,32 +303,18 @@ export default function EditAccountPage() {
             onChange={(e) => setForm((s) => ({ ...s, username: e.target.value }))}
             fullWidth
           />
-
           <TextField
             label="Staff ID"
             value={form.staffId}
             onChange={(e) => setForm((s) => ({ ...s, staffId: e.target.value }))}
             fullWidth
           />
-
           <TextField
             label="Email"
             value={form.email}
             onChange={(e) => setForm((s) => ({ ...s, email: e.target.value }))}
             fullWidth
           />
-
-          <TextField
-            select
-            label="Role"
-            value={form.role}
-            onChange={(e) => setForm((s) => ({ ...s, role: e.target.value }))}
-            fullWidth
-          >
-            <MenuItem value="admin">Administrator</MenuItem>
-            <MenuItem value="marker">Marker</MenuItem>
-          </TextField>
-
           <TextField
             label="New Password"
             type="password"
@@ -300,15 +322,14 @@ export default function EditAccountPage() {
             onChange={(e) => setForm((s) => ({ ...s, password: e.target.value }))}
             fullWidth
           />
-
           <TextField
             label="Confirm Password"
             type="password"
             value={form.confirmPassword}
             onChange={(e) => setForm((s) => ({ ...s, confirmPassword: e.target.value }))}
             fullWidth
-            error={!!error}
-            helperText={error}
+            error={!!passwordError}
+            helperText={passwordError}
           />
 
           <Box sx={{ display: "flex", justifyContent: "center", gap: 3, mt: 2 }}>
@@ -331,6 +352,22 @@ export default function EditAccountPage() {
           </Box>
         </Box>
       </Box>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

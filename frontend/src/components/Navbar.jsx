@@ -3,7 +3,7 @@ import { Box, Drawer, Avatar, List, ListItem, ListItemButton, ListItemText } fro
 import PersonIcon from "@mui/icons-material/Person";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-export default function Navbar(props) {
+export default function Navbar() {
   const { userId } = useParams();
   const navigate = useNavigate();
 

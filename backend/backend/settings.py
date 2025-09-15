@@ -16,7 +16,8 @@ from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media" 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -57,11 +58,21 @@ MIDDLEWARE = [
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 AUTH_USER_MODEL = 'api.User'
-SESSION_COOKIE_SAMESITE = "None"   # allow cross-site
+SESSION_COOKIE_SAMESITE = "Lax"   # allow cross-site
+CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = False      # set True if using HTTPS
+CSRF_COOKIE_SECURE = False
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "X-Session-ID",  # add your custom header here
 ]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",  # your React dev server
+    "http://127.0.0.1:5173",  # optional
+    "http://localhost:8000",  # your React dev server
+    "http://127.0.0.1:8000",  # optional
+]
+
 
 ROOT_URLCONF = 'backend.urls'
 
