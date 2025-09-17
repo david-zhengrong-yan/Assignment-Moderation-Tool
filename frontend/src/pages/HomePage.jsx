@@ -12,16 +12,24 @@ import {
   Toolbar,
   AppBar,
   Chip,
+  CircularProgress,
 } from "@mui/material";
 import Navbar from "../components/Navbar";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
-export default function HomePage({ role = "admin" }) {
+export default function HomePage() {
+  const sessionid = localStorage.getItem("sessionid");
   const [filter, setFilter] = useState("all");
   const [sort, setSort] = useState("a-z");
   const [search, setSearch] = useState("");
   const [appBarHeight, setAppBarHeight] = useState(0);
   const { userId } = useParams();
+  const navigate = useNavigate();
+
+  const [user, setUser] = useState({});
+  const [assignments, setAssignments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const navbarWidth = 200;
   const appBarRef = useRef(null);
@@ -39,15 +47,47 @@ export default function HomePage({ role = "admin" }) {
 
   const handleSearch = (event) => setSearch(event.target.value.toLowerCase());
 
-  // Example assignments (later replace with fetch)
-  const assignments = [
-    { name: "Algebra Homework", dueDate: "2025-09-20", completed: false },
-    { name: "Essay on Shakespeare", dueDate: "2025-09-18", completed: true },
-    { name: "Physics Lab Report", dueDate: "2025-09-22", completed: false },
-    { name: "Economics Case Study", dueDate: "2025-09-25", completed: true },
-    { name: "Biology Quiz Prep", dueDate: "2025-09-16", completed: false },
-  ];
+  // Fetch user info + assignments
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
 
+        // 🔹 Fetch user info
+        const userRes = await fetch(`http://localhost:8000/api/${userId}/account`, {
+          method: "GET",
+          headers: { "X-Session-ID": sessionid },
+          credentials: "include",
+        });
+        if (!userRes.ok) throw new Error("Failed to fetch user info");
+        const userData = await userRes.json();
+        setUser(userData);
+
+        // 🔹 Fetch assignments
+        const assignmentsRes = await fetch(`http://localhost:8000/api/${userId}/assignments`, {
+          method: "GET",
+          headers: { "X-Session-ID": sessionid },
+          credentials: "include",
+        });
+        if (!assignmentsRes.ok) throw new Error("Failed to fetch assignments");
+        const assignmentsData = await assignmentsRes.json();
+        setAssignments(assignmentsData.assignments);
+
+        setError(null);
+      } catch (err) {
+        console.error(err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (userId) {
+      fetchData();
+    }
+  }, [userId]);
+
+  // Filtering + sorting
   const filteredAssignments = assignments
     .filter(
       (a) =>
@@ -152,80 +192,90 @@ export default function HomePage({ role = "admin" }) {
           {/* Spacer */}
           <Box sx={{ height: `${appBarHeight}px` }} />
 
-          {/* Assignment Grid */}
-          <Box
-            sx={{
-              mt: 3,
-              px: 4,
-              pb: 4,
-              display: "grid",
-              gridTemplateColumns: `repeat(auto-fill, minmax(${cardWidth}px, 1fr))`,
-              gap: cardGap,
-            }}
-          >
-            {filteredAssignments.map((a, index) => (
-              <Paper
-                key={index}
-                sx={{
-                  width: cardWidth,
-                  height: cardHeight,
-                  bgcolor: "#E5E5E5",
-                  borderRadius: 3,
-                  p: 2,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  boxShadow: "0 2px 5px rgba(0,0,0,0.08)",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:hover": {
-                    transform: "translateY(-3px)",
-                    boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
-                  },
-                }}
-              >
-                <Box>
-                  <Typography variant="h6">{a.name}</Typography>
-                  <Typography
-                    sx={{ fontSize: "0.9rem", color: "text.secondary" }}
-                  >
-                    Due: {new Date(a.dueDate).toLocaleDateString()}
-                  </Typography>
-                </Box>
+          {/* Loading / Error */}
+          {loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Typography color="error" sx={{ mt: 3, textAlign: "center" }}>
+              {error}
+            </Typography>
+          ) : (
+            <Box
+              sx={{
+                mt: 3,
+                px: 4,
+                pb: 4,
+                display: "grid",
+                gridTemplateColumns: `repeat(auto-fill, minmax(${cardWidth}px, 1fr))`,
+                gap: cardGap,
+              }}
+            >
+              {filteredAssignments.map((a, index) => (
+                <Paper
+                  key={index}
+                  sx={{
+                    width: cardWidth,
+                    height: cardHeight,
+                    bgcolor: "#E5E5E5",
+                    borderRadius: 3,
+                    p: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    boxShadow: "0 2px 5px rgba(0,0,0,0.08)",
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                      boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
+                    },
+                  }}
+                >
+                  <Box>
+                    <Typography variant="h6">{a.name}</Typography>
+                    <Typography
+                      sx={{ fontSize: "0.9rem", color: "text.secondary" }}
+                    >
+                      Due: {new Date(a.dueDate).toLocaleDateString()}
+                    </Typography>
+                  </Box>
 
-                <Chip
-                  label={a.completed ? "Completed" : "Incomplete"}
-                  color={a.completed ? "success" : "warning"}
-                  variant="outlined"
-                  sx={{ alignSelf: "flex-start", mt: 1 }}
-                />
-              </Paper>
-            ))}
+                  <Chip
+                    label={a.completed ? "Completed" : "Incomplete"}
+                    color={a.completed ? "success" : "warning"}
+                    variant="outlined"
+                    sx={{ alignSelf: "flex-start", mt: 1 }}
+                  />
+                </Paper>
+              ))}
 
-            {role === "admin" && (
-              <Paper
-                sx={{
-                  width: cardWidth,
-                  height: cardHeight,
-                  bgcolor: "#E5E5E5",
-                  borderRadius: 3,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "2.5rem",
-                  cursor: "pointer",
-                  boxShadow: "0 2px 5px rgba(0,0,0,0.08)",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:hover": {
-                    transform: "translateY(-3px)",
-                    boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
-                  },
-                }}
-                onClick={() => alert("Add new assignment")}
-              >
-                +
-              </Paper>
-            )}
-          </Box>
+              {user.role === "admin" && (
+                <Paper
+                  sx={{
+                    width: cardWidth,
+                    height: cardHeight,
+                    bgcolor: "#E5E5E5",
+                    borderRadius: 3,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "2.5rem",
+                    cursor: "pointer",
+                    boxShadow: "0 2px 5px rgba(0,0,0,0.08)",
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                      boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
+                    },
+                  }}
+                  onClick={() => navigate(`/${userId}/assignment/create`)}
+                >
+                  +
+                </Paper>
+              )}
+            </Box>
+          )}
         </Box>
       </Box>
     </>

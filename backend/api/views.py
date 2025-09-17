@@ -514,13 +514,51 @@ def edit_account_view(request, id):
                 {"successful": False, "message": "Error"},
                 status=404
             )
+        
 
-
-def show_assignments_view(request):
+def show_assignments_view(request, id):
     if request.method == "GET":
-        if not request.user.is_authenticated:
-            return JsonResponse({"successful" : False, "message" : "You need to login first"}, status=401)
-    return JsonResponse({ "message" : "hello, world!"})
+        sessionid = request.headers.get("X-Session-ID")
+        if not sessionid:
+            return JsonResponse(
+                {"successful": False, "message": "User is not logged in"},
+                status=401
+            )
+
+        # try:
+        #     # Decode session
+        #     session = Session.objects.get(session_key=sessionid)
+        #     uid = session.get_decoded().get("_auth_user_id")
+        #     user = User.objects.get(pk=uid)
+        # except (Session.DoesNotExist, User.DoesNotExist):
+        #     return JsonResponse(
+        #         {"successful": False, "message": "Invalid session"},
+        #         status=401
+        #     )
+
+        # ✅ Fetch all assignments
+        assignments = Assignment.objects.all().values("id", "name", "due_date")
+
+        # Convert datetime → string (ISO or formatted)
+        assignment_list = [
+            {
+                "id": a["id"],
+                "name": a["name"],
+                "dueDate": a["due_date"].strftime("%Y-%m-%d"),
+            }
+            for a in assignments
+        ]
+
+        return JsonResponse(
+            {"successful": True, "assignments": assignment_list},
+            status=200
+        )
+
+    return JsonResponse(
+        {"successful": False, "message": "Method not allowed"},
+        status=405
+    )
+
 
 def delete_assignment_view(request):
     return JsonResponse({"message" : "Assignment is deleted"})
