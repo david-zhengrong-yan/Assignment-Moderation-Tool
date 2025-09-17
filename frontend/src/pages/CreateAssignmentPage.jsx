@@ -250,7 +250,7 @@ export default function CreateAssignmentPage() {
                     <TextField
                       size="small"
                       id="outlined-basic"
-                      label="Mark 1"
+                      label="Submission 1"
                       type="number"
                       value={q.m1}
                       onChange={(e) =>
@@ -264,7 +264,7 @@ export default function CreateAssignmentPage() {
                     <TextField
                       size="small"
                       id="outlined-basic"
-                      label="Mark 2"
+                      label="Submission 2"
                       type="number"
                       value={q.m2}
                       onChange={(e) =>
