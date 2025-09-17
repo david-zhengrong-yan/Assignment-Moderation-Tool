@@ -11,6 +11,9 @@ import AccountPage from "./pages/AccountPage";
 import EditAccountPage from "./pages/EditAccountPage";
 import AssignmentPage from "./pages/AssignmentPage";
 import CreateAssignmentPage from "./pages/CreateAssignmentPage";
+import MarkingPage from "./pages/MarkingPage";
+import MarkerPage from "./pages/MarkerPage";
+
 
 function App() {
   return (
@@ -24,6 +27,8 @@ function App() {
         <Route path="/edit-account" element={<EditAccountPage />} />
         <Route path="/assignment" element={<AssignmentPage />} />
         <Route path="/assignment/create" element={<CreateAssignmentPage />} />
+        <Route path="/marking" element={<MarkingPage />} />
+        <Route path="/marker" element={<MarkerPage />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
         <Route path="/people" element={<PeoplePage />} />
       </Routes>
