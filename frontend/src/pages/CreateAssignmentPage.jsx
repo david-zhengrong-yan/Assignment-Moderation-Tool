@@ -12,7 +12,6 @@ import {
   IconButton,
   Chip,
   Tooltip,
-  InputAdornment,
   Stack,
 } from "@mui/material";
 import {
@@ -27,14 +26,16 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import Navbar from "../components/Navbar";
 
-// Match your Navbar's permanent Drawer width
 const LEFT_NAV_WIDTH = 200;
 
 export default function CreateAssignmentPage() {
   // ===== Form state =====
   const [name, setName] = React.useState("");
   const [dueDate, setDueDate] = React.useState(dayjs());
-  const [rubricFiles, setRubricFiles] = React.useState([]); // File[]
+
+  const [assignmentFiles, setAssignmentFiles] = React.useState([]);
+  const [rubricFiles, setRubricFiles] = React.useState([]);
+
   const [sub1Files, setSub1Files] = React.useState([]);
   const [sub2Files, setSub2Files] = React.useState([]);
   const [sub1Feedback, setSub1Feedback] = React.useState("");
@@ -45,7 +46,7 @@ export default function CreateAssignmentPage() {
   ]);
   const nextId = React.useRef(2);
 
-  // ===== Question helpers (unchanged) =====
+  // ===== Helpers =====
   const addQuestion = () => {
     setQuestions((prev) => [
       ...prev,
@@ -59,31 +60,45 @@ export default function CreateAssignmentPage() {
       },
     ]);
   };
+
   const updateQuestion = (id, key, value) => {
     setQuestions((prev) =>
       prev.map((q) => (q.id === id ? { ...q, [key]: value } : q))
     );
   };
+
   const removeQuestion = (id) => {
     setQuestions((prev) => prev.filter((q) => q.id !== id));
   };
 
-  // ===== File upload helpers (unchanged) =====
   const onUpload = (setter) => (e) => {
     const files = Array.from(e.target.files || []);
     setter((prev) => [...prev, ...files]);
-    e.target.value = ""; // reset input
+    e.target.value = "";
   };
+
   const deleteFileAt = (setter) => (idx) => {
     setter((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  // ===== Actions (unchanged) =====
+  // ===== Validation =====
+  const hasInvalid = questions.some(
+    (q) => Number(q.m1 || 0) + Number(q.m2 || 0) > Number(q.full || 0)
+  );
+
+  // ===== Actions =====
   const handleCancel = () => window.history.back();
+
   const handleCreate = () => {
+    if (hasInvalid) {
+      alert("❌ Error: Some questions have m1 + m2 exceeding Full Mark.");
+      return;
+    }
+
     const payload = {
       name,
       dueDate: dueDate?.toISOString(),
+      assignmentFiles,
       rubricFiles,
       questions,
       submissions: [
@@ -95,7 +110,7 @@ export default function CreateAssignmentPage() {
     // call your API / navigate
   };
 
-  // ===== Styling: keep your first design TextField look =====
+  // ===== Styling =====
   const textFieldSx = {
     bgcolor: "#F0F1F3",
     "& .MuiInputBase-root": { borderRadius: 2 },
@@ -106,7 +121,6 @@ export default function CreateAssignmentPage() {
       <CssBaseline />
       <Navbar />
 
-      {/* MAIN CONTENT — vertical sections per Figma */}
       <Box
         component="main"
         sx={{
@@ -115,12 +129,7 @@ export default function CreateAssignmentPage() {
           width: "auto",
         }}
       >
-        <Container
-          //   maxWidth="md"
-          maxWidth={false}
-          //   disableGutters
-          sx={{ py: 5, alignItems: "flex-start", justifyContent: "flex-start" }}
-        >
+        <Container maxWidth={false} sx={{ py: 5 }}>
           <Typography variant="h4" sx={{ mb: 3 }}>
             Create Assignment
           </Typography>
@@ -137,7 +146,6 @@ export default function CreateAssignmentPage() {
                 </Grid>
                 <Grid item xs={9}>
                   <TextField
-                    id="outlined-basic"
                     label="Enter assignment name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -166,10 +174,43 @@ export default function CreateAssignmentPage() {
                 </Grid>
               </Grid>
 
-              {/* Rubric */}
+              {/* Assignment File */}
               <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
                 <Grid item xs={3}>
-                  <Typography>Rubric:</Typography>
+                  <Typography>Assignment File:</Typography>
+                </Grid>
+                <Grid item xs={9}>
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    {assignmentFiles.map((f, i) => (
+                      <Chip
+                        key={i}
+                        label={f.name}
+                        onDelete={() => deleteFileAt(setAssignmentFiles)(i)}
+                      />
+                    ))}
+                    <Button
+                      component="label"
+                      startIcon={<UploadFile />}
+                      variant="outlined"
+                      size="small"
+                    >
+                      Upload (.pdf, .doc, .xls, .md)
+                      <input
+                        hidden
+                        multiple
+                        type="file"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.md"
+                        onChange={onUpload(setAssignmentFiles)}
+                      />
+                    </Button>
+                  </Box>
+                </Grid>
+              </Grid>
+
+              {/* Rubric File */}
+              <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+                <Grid item xs={3}>
+                  <Typography>Rubric File:</Typography>
                 </Grid>
                 <Grid item xs={9}>
                   <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
@@ -202,9 +243,7 @@ export default function CreateAssignmentPage() {
               {/* Questions */}
               <Stack container spacing={2} sx={{ mb: 2 }}>
                 <Box item xs={12}>
-                  <Typography
-                    sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                  >
+                  <Typography sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                     Question:
                     <Tooltip title="Set title, full mark, band marks, and accept rate for each question.">
                       <InfoOutlined fontSize="small" />
@@ -212,97 +251,118 @@ export default function CreateAssignmentPage() {
                   </Typography>
                 </Box>
 
-                {questions.map((q) => (
-                  <Box
-                    key={q.id}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "nowrap",
-                    }}
-                  >
-                    {/* Question title */}
-                    <TextField
-                      size="small"
-                      placeholder="Question"
-                      value={q.title}
-                      onChange={(e) =>
-                        updateQuestion(q.id, "title", e.target.value)
-                      }
-                      sx={{ ...textFieldSx, flex: 2 }}
-                    />
+                {questions.map((q) => {
+                  const isInvalid =
+                    Number(q.m1 || 0) + Number(q.m2 || 0) > Number(q.full || 0);
 
-                    {/* Full Mark */}
-                    <TextField
-                      size="small"
-                      id="outlined-basic"
-                      label="Full Mark"
-                      type="number"
-                      value={q.full}
-                      onChange={(e) =>
-                        updateQuestion(q.id, "full", e.target.value)
-                      }
-                      sx={{ ...textFieldSx, flex: 1 }}
-                      inputProps={{ min: 0 }}
-                    />
-
-                    {/* Mark 1 */}
-                    <TextField
-                      size="small"
-                      id="outlined-basic"
-                      label="Submission 1"
-                      type="number"
-                      value={q.m1}
-                      onChange={(e) =>
-                        updateQuestion(q.id, "m1", e.target.value)
-                      }
-                      sx={{ ...textFieldSx, flex: 1 }}
-                      inputProps={{ min: 0 }}
-                    />
-
-                    {/* Mark 2 */}
-                    <TextField
-                      size="small"
-                      id="outlined-basic"
-                      label="Submission 2"
-                      type="number"
-                      value={q.m2}
-                      onChange={(e) =>
-                        updateQuestion(q.id, "m2", e.target.value)
-                      }
-                      sx={{ ...textFieldSx, flex: 1 }}
-                      inputProps={{ min: 0 }}
-                    />
-
-                    {/* Accept Rate */}
-                    <TextField
-                      size="small"
-                      id="outlined-basic"
-                      label="Accept Rate"
-                      value={q.rule}
-                      onChange={(e) =>
-                        updateQuestion(q.id, "rule", e.target.value)
-                      }
-                      sx={{ ...textFieldSx, flex: 2 }}
-                    />
-
-                    {/* Delete button */}
-                    <IconButton
-                      size="small"
-                      onClick={() => removeQuestion(q.id)}
+                  return (
+                    <Box
+                      key={q.id}
+                      sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        flexWrap: "nowrap",
+                      }}
                     >
-                      <DeleteOutline />
-                    </IconButton>
-                  </Box>
-                ))}
+                      {/* Title */}
+                      <TextField
+                        size="small"
+                        placeholder="Question"
+                        value={q.title}
+                        onChange={(e) => updateQuestion(q.id, "title", e.target.value)}
+                        sx={{ ...textFieldSx, flex: 2 }}
+                      />
 
-                {/* Add Question button */}
+                      {/* Full */}
+                      <TextField
+                        size="small"
+                        label="Full Mark"
+                        type="number"
+                        value={q.full}
+                        onChange={(e) => updateQuestion(q.id, "full", e.target.value)}
+                        sx={{ ...textFieldSx, flex: 1 }}
+                        inputProps={{ min: 0 }}
+                      />
+
+                      {/* M1 */}
+                      <TextField
+                        size="small"
+                        label="Submission 1"
+                        type="number"
+                        value={q.m1}
+                        onChange={(e) => updateQuestion(q.id, "m1", e.target.value)}
+                        sx={{ ...textFieldSx, flex: 1 }}
+                        inputProps={{ min: 0 }}
+                        error={isInvalid}
+                        helperText={isInvalid ? "m1 + m2 > Full" : ""}
+                      />
+
+                      {/* M2 */}
+                      <TextField
+                        size="small"
+                        label="Submission 2"
+                        type="number"
+                        value={q.m2}
+                        onChange={(e) => updateQuestion(q.id, "m2", e.target.value)}
+                        sx={{ ...textFieldSx, flex: 1 }}
+                        inputProps={{ min: 0 }}
+                        error={isInvalid}
+                        helperText={isInvalid ? "m1 + m2 > Full" : ""}
+                      />
+
+                      {/* Rule */}
+                      <TextField
+                        size="small"
+                        label="Accept Rate"
+                        value={q.rule}
+                        onChange={(e) => updateQuestion(q.id, "rule", e.target.value)}
+                        sx={{ ...textFieldSx, flex: 2 }}
+                      />
+
+                      <IconButton size="small" onClick={() => removeQuestion(q.id)}>
+                        <DeleteOutline />
+                      </IconButton>
+                    </Box>
+                  );
+                })}
+
+                {/* Totals Row */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "nowrap",
+                    mt: 1,
+                    bgcolor: hasInvalid ? "#ffe6e6" : "#f9f9f9",
+                    p: 1,
+                    borderRadius: 1,
+                    fontWeight: "bold",
+                    color: hasInvalid ? "error.main" : "inherit",
+                  }}
+                >
+                  <Box sx={{ flex: 2 }}>Total:</Box>
+                  <Box sx={{ flex: 1, textAlign: "center" }}>
+                    {questions.reduce((s, q) => s + Number(q.full || 0), 0)}
+                  </Box>
+                  <Box sx={{ flex: 1, textAlign: "center" }}>
+                    {questions.reduce((s, q) => s + Number(q.m1 || 0), 0)}
+                  </Box>
+                  <Box sx={{ flex: 1, textAlign: "center" }}>
+                    {questions.reduce((s, q) => s + Number(q.m2 || 0), 0)}
+                  </Box>
+                  <Box sx={{ flex: 2 }}>
+                    {hasInvalid && (
+                      <Typography variant="caption" color="error">
+                        Some rows invalid
+                      </Typography>
+                    )}
+                  </Box>
+                  <Box sx={{ width: 40 }} />
+                </Box>
+
+                {/* Add Question */}
                 <Box sx={{ mb: 2 }}>
-                  <Button
-                    onClick={addQuestion}
-                    startIcon={<AddCircleOutline />}
-                    size="small"
-                  >
+                  <Button onClick={addQuestion} startIcon={<AddCircleOutline />} size="small">
                     Add Question
                   </Button>
                 </Box>
@@ -310,12 +370,9 @@ export default function CreateAssignmentPage() {
 
               {/* Submission 1 */}
               <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                {/* left Label */}
                 <Grid item xs={3}>
                   <Typography>Submission 1:</Typography>
                 </Grid>
-
-                {/* right upload file area */}
                 <Grid item xs={9}>
                   <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                     {sub1Files.map((f, i) => (
@@ -326,7 +383,6 @@ export default function CreateAssignmentPage() {
                         size="small"
                       />
                     ))}
-
                     <Button
                       component="label"
                       variant="outlined"
@@ -348,20 +404,12 @@ export default function CreateAssignmentPage() {
               </Grid>
 
               {/* Submission 1 Feedback */}
-              <Stack
-                direction="column"
-                sx={{
-                  justifyContent: "flex-start",
-                  alignItems: "flex-start",
-                  mb: 3,
-                }}
-              >
+              <Stack direction="column" sx={{ mb: 3 }}>
                 <Typography>Submission 1 Feedback:</Typography>
                 <TextField
                   fullWidth
                   multiline
                   minRows={3}
-                  id="outlined-basic"
                   label="Add Comments"
                   value={sub1Feedback}
                   onChange={(e) => setSub1Feedback(e.target.value)}
@@ -405,20 +453,12 @@ export default function CreateAssignmentPage() {
               </Grid>
 
               {/* Submission 2 Feedback */}
-              <Stack
-                direction="column"
-                sx={{
-                  mb: 3,
-                  justifyContent: "flex-start",
-                  alignItems: "flex-start",
-                }}
-              >
+              <Stack direction="column" sx={{ mb: 3 }}>
                 <Typography>Submission 2 Feedback:</Typography>
                 <TextField
                   fullWidth
                   multiline
                   minRows={3}
-                  id="outlined-basic"
                   label="Add Comments"
                   value={sub2Feedback}
                   onChange={(e) => setSub2Feedback(e.target.value)}
@@ -426,23 +466,18 @@ export default function CreateAssignmentPage() {
                 />
               </Stack>
 
-              {/* Footer actions (centered like the Figma) */}
-              <Box item xs={12}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    gap: 2,
-                    mt: 1,
-                  }}
+              {/* Footer Actions */}
+              <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
+                <Button variant="outlined" onClick={handleCancel}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleCreate}
+                  disabled={hasInvalid}
                 >
-                  <Button variant="outlined" onClick={handleCancel}>
-                    Cancel
-                  </Button>
-                  <Button variant="contained" onClick={handleCreate}>
-                    Create
-                  </Button>
-                </Box>
+                  Create
+                </Button>
               </Box>
             </Box>
           </Paper>
