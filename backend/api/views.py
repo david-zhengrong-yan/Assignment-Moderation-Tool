@@ -560,8 +560,78 @@ def show_assignments_view(request, id):
     )
 
 
-def delete_assignment_view(request):
-    return JsonResponse({"message" : "Assignment is deleted"})
+@csrf_exempt
+def delete_assignment_view(request, id):
+    """
+    Delete a specific assignment.
+    Only the teacher (administrator) who created it can delete.
+    Endpoint: DELETE /api/assignment/<id>/delete
+    """
+    if request.method == "DELETE":
+        sessionid = request.headers.get("X-Session-ID")
+        if not sessionid:
+            return JsonResponse(
+                {"successful": False, "message": "User is not logged in"},
+                status=401
+            )
+
+        try:
+            # Validate session
+            session = Session.objects.get(session_key=sessionid)
+            uid = session.get_decoded().get("_auth_user_id")
+            user = User.objects.get(pk=uid)
+
+            # Fetch assignment
+            assignment = Assignment.objects.get(pk=id)
+
+            # Check if current user is the creator (administrator)
+            if assignment.administrator != user:
+                return JsonResponse(
+                    {"successful": False, "message": "Permission denied"},
+                    status=403
+                )
+
+            # Build response before deletion (optional, useful for frontend confirmation)
+            deleted_assignment = {
+                "id": assignment.id,
+                "name": assignment.name,
+                "description": getattr(assignment, "description", None),
+                "dueDate": assignment.due_date.strftime("%Y-%m-%d") if assignment.due_date else None,
+                "creationDate": assignment.creation_date.strftime("%Y-%m-%d") if assignment.creation_date else None,
+                "administrator": {
+                    "id": assignment.administrator.id if assignment.administrator else None,
+                    "username": assignment.administrator.username if assignment.administrator else None,
+                    "email": assignment.administrator.email if assignment.administrator else None,
+                }
+            }
+
+            # Delete the assignment
+            assignment.delete()
+
+            return JsonResponse(
+                {
+                    "successful": True,
+                    "message": "Assignment deleted successfully",
+                    "deletedAssignment": deleted_assignment
+                },
+                status=200
+            )
+
+        except Assignment.DoesNotExist:
+            return JsonResponse(
+                {"successful": False, "message": "Assignment not found"},
+                status=404
+            )
+        except:
+            return JsonResponse(
+                {"successful": False, "message": "Error occurred"},
+                status=500
+            )
+
+    return JsonResponse(
+        {"successful": False, "message": "Method not allowed"},
+        status=405
+    )
 
 def create_assignment_view(request):
     print("Assignment is created")
