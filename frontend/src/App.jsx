@@ -11,6 +11,7 @@ import AccountPage from "./pages/AccountPage";
 import EditAccountPage from "./pages/EditAccountPage";
 import AssignmentPage from "./pages/AssignmentPage";
 import CreateAssignmentPage from "./pages/CreateAssignmentPage";
+import ViewSubmissionPage from "./pages/ViewSubmissionPage";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="/assignment/create" element={<CreateAssignmentPage />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
         <Route path="/people" element={<PeoplePage />} />
+        <Route path="/submissions" element={<ViewSubmissionPage />} />
       </Routes>
     </>
   );
