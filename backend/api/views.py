@@ -50,7 +50,6 @@ def login_view(request):
             "id": 1,
             "username": "john_doe",
             "role": "admin",
-            "staffId": "S001",
             "email": "john@example.com",
             "sessionId": "xyz123"
         }
@@ -88,7 +87,6 @@ def login_view(request):
                     "id": user.id,
                     "username": getattr(user, "username", ""),  # safe fetch
                     "role": getattr(user, "role", ""),
-                    "staffId": getattr(user, "staffid", ""),
                     "email": user.email,
                     "sessionId" : session_id
                 },
@@ -150,21 +148,20 @@ def signup_view(request):
     Expected JSON payload:
         {
             "username": "john_doe",
-            "staffId": "S001",
             "email": "user@example.com",
             "password": "password123",
             "role": "admin"   # or "marker"
         }
 
     Behavior:
-        - Validates required fields (username, staffId, email, password, role).
-        - Checks uniqueness of username, staffId, and email.
+        - Validates required fields (username, email, password, role).
+        - Checks uniqueness of username, and email.
         - Ensures only one user with role 'admin' can exist.
         - Creates a new user with hashed password if all checks pass.
 
     Returns:
         - 200 OK with success message if user is created.
-        - 400 Bad Request for missing fields or duplicate username/email/staffId.
+        - 400 Bad Request for missing fields or duplicate username/email.
         - 405 Method Not Allowed if request method is not POST.
 
     JSON Response Example (Success):
@@ -177,13 +174,11 @@ def signup_view(request):
         signup_info = json.loads(request.body)
 
         username = signup_info.get("username")
-        staff_id = signup_info.get("staffId")
         email = signup_info.get("email")
         password = signup_info.get("password")
-        role = signup_info.get("role")  # should be either "admin" or "marker"
 
         # Validate input
-        if not (email and password and staff_id and role):
+        if not (email and password):
             return JsonResponse(
                 {"successful": False, "message": "Missing required fields."},
                 status=400
@@ -196,13 +191,6 @@ def signup_view(request):
                 status=400
             )
 
-        # Check unique staff ID
-        if User.objects.filter(staffid=staff_id).exists():
-            return JsonResponse(
-                {"successful": False, "message": "Staff ID has already been registered."},
-                status=400
-            )
-
         # Check unique email
         if User.objects.filter(email=email).exists():
             return JsonResponse(
@@ -210,18 +198,9 @@ def signup_view(request):
                 status=400
             )
 
-        # Ensure only one administrator can exist
-        if role == "admin" and User.objects.filter(role="admin").exists():
-            return JsonResponse(
-                {"successful": False, "message": "Administrator has already been registered."},
-                status=400
-            )
-
         # Create new user
         new_user = User(
             email=email,
-            staffid=staff_id,
-            role=role,
             username=username  # Optional: using built-in Django field
         )
         new_user.set_password(password)  # hash the password!
@@ -289,7 +268,6 @@ def login_status_view(request):
                     "id": user.id,
                     "username": getattr(user, "username", ""),
                     "role": getattr(user, "role", ""),
-                    "staffId": getattr(user, "staffid", ""),
                     "email": user.email,
                 },
                 status=200
@@ -332,7 +310,6 @@ def account_view(request, id):
             "id": 1,
             "username": "john_doe",
             "role": "admin",
-            "staffId": "S001",
             "email": "john@example.com",
             "profilePicture": "https://example.com/media/profile_pics/john.jpg"
         }
@@ -359,7 +336,6 @@ def account_view(request, id):
                     "id": user.id,
                     "username": getattr(user, "username", ""),
                     "role": getattr(user, "role", ""),
-                    "staffId": getattr(user, "staffid", ""),
                     "email": user.email,
                     "profilePicture" : request.build_absolute_uri(user.profile_picture.url) if user.profile_picture else None
                 },
@@ -394,8 +370,6 @@ def edit_account_view(request, id):
     Request POST Parameters (optional):
         - username: string
             New username for the user.
-        - staffId: string
-            New staff ID for the user.
         - role: string
             New role for the user.
         - email: string
@@ -461,12 +435,8 @@ def edit_account_view(request, id):
 
             # Handle text fields
             username = request.POST.get("username")
-            staffId = request.POST.get("staffId")
-            role = request.POST.get("role")
             email = request.POST.get("email")
             password = request.POST.get("password")
-
-            print(username, staffId, role, email, password)
 
             # Check if email is used by another user
             if email and User.objects.filter(email=email.strip()).exclude(id=user.id).exists():
@@ -475,20 +445,9 @@ def edit_account_view(request, id):
                     "message": "Email is already used by another user"
                 }, status=400)
 
-            # Check if staffId is used by another user
-            if staffId and User.objects.filter(staffid=staffId.strip()).exclude(id=user.id).exists():
-                return JsonResponse({
-                    "success": False,
-                    "message": "Staff ID is already used by another user"
-                }, status=400)
-
             # Update fields if provided
             if username is not None:
                 user.username = username.strip()
-            if staffId is not None:
-                user.staffid = staffId.strip()
-            if role is not None:
-                user.role = role.strip()
             if email is not None:
                 user.email = email.strip()
             if password:
@@ -503,7 +462,6 @@ def edit_account_view(request, id):
                 "success": True,
                 "message": "Account edited successfully",
                 "username": user.username,
-                "staffId": user.staffid,
                 "role": user.role,
                 "email": user.email,
                 "profilePicture": user.profile_picture.url if user.profile_picture else None

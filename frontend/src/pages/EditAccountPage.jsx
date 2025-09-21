@@ -22,7 +22,6 @@ export default function EditAccountPage() {
 
   const [form, setForm] = useState({
     username: "",
-    staffId: "",
     role: "",
     email: "",
     password: "",
@@ -31,8 +30,7 @@ export default function EditAccountPage() {
   });
   const [initialForm, setInitialForm] = useState({});
   const [preview, setPreview] = useState(null);
-  const [passwordError, setPasswordError] = useState(""); // only for confirm password
-  const [fileError, setFileError] = useState("");
+  const [passwordError, setPasswordError] = useState(""); 
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -42,12 +40,10 @@ export default function EditAccountPage() {
   const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
   const MAX_DIMENSION = 400; // px
 
-  // --- Snackbar helper ---
   const showSnackbar = (message, severity = "error") => {
     setSnackbar({ open: true, message, severity });
   };
 
-  // --- Fetch with session + 401 redirect ---
   const fetchWithAuth = async (url, options = {}) => {
     const res = await fetch(url, {
       ...options,
@@ -66,7 +62,6 @@ export default function EditAccountPage() {
     return res;
   };
 
-  // --- Fetch user data ---
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -77,7 +72,6 @@ export default function EditAccountPage() {
 
         setForm({
           username: data.username,
-          staffId: data.staffId,
           role: data.role,
           email: data.email,
           password: "",
@@ -87,15 +81,16 @@ export default function EditAccountPage() {
 
         setInitialForm({
           username: data.username,
-          staffId: data.staffId,
           role: data.role,
           email: data.email,
         });
 
         if (data.profilePicture) {
-          setPreview(data.profilePicture.startsWith("http")
-            ? data.profilePicture
-            : `http://localhost:8000${data.profilePicture}`);
+          setPreview(
+            data.profilePicture.startsWith("http")
+              ? data.profilePicture
+              : `http://localhost:8000${data.profilePicture}`
+          );
         }
       } catch (err) {
         console.error(err);
@@ -105,7 +100,6 @@ export default function EditAccountPage() {
     fetchUser();
   }, [sessionid, userId, navigate]);
 
-  // --- Image resize ---
   const resizeImage = (file) =>
     new Promise((resolve, reject) => {
       const img = new Image();
@@ -141,9 +135,7 @@ export default function EditAccountPage() {
       img.src = URL.createObjectURL(file);
     });
 
-  // --- Handle file selection ---
   const handleFileChange = async (e) => {
-    setFileError("");
     const file = e.target.files[0];
     if (!file) return;
 
@@ -166,7 +158,6 @@ export default function EditAccountPage() {
     }
   };
 
-  // --- Check if form has changed ---
   const isFormChanged = () => {
     const { password, confirmPassword, profilePicture, ...rest } = form;
     return (
@@ -177,7 +168,6 @@ export default function EditAccountPage() {
     );
   };
 
-  // --- Save changes ---
   const handleSave = async () => {
     setPasswordError("");
 
@@ -189,7 +179,6 @@ export default function EditAccountPage() {
     try {
       const formData = new FormData();
       formData.append("username", form.username);
-      formData.append("staffId", form.staffId);
       formData.append("role", form.role);
       formData.append("email", form.email);
       if (form.password) formData.append("password", form.password);
@@ -197,11 +186,14 @@ export default function EditAccountPage() {
         formData.append("profilePicture", form.profilePicture);
       }
 
-      const res = await fetchWithAuth(`http://localhost:8000/api/${userId}/account/edit`, {
-        method: "POST",
-        body: formData,
-      });
-      if (!res) return; // redirected due to 401
+      const res = await fetchWithAuth(
+        `http://localhost:8000/api/${userId}/account/edit`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+      if (!res) return;
       if (!res.ok) {
         const errData = await res.json();
         showSnackbar(errData.message || "Failed to update account");
@@ -216,13 +208,11 @@ export default function EditAccountPage() {
     }
   };
 
-  // --- Cancel editing ---
   const handleCancel = () => {
     if (isFormChanged() && !window.confirm("You have unsaved changes. Leave anyway?")) return;
     navigate(`/${userId}/account`);
   };
 
-  // --- Warn on browser refresh/close ---
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (isFormChanged()) {
@@ -304,12 +294,6 @@ export default function EditAccountPage() {
             fullWidth
           />
           <TextField
-            label="Staff ID"
-            value={form.staffId}
-            onChange={(e) => setForm((s) => ({ ...s, staffId: e.target.value }))}
-            fullWidth
-          />
-          <TextField
             label="Email"
             value={form.email}
             onChange={(e) => setForm((s) => ({ ...s, email: e.target.value }))}
@@ -353,7 +337,6 @@ export default function EditAccountPage() {
         </Box>
       </Box>
 
-      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

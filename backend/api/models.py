@@ -7,7 +7,6 @@ from django.contrib.auth.models import AbstractUser
 class User(AbstractUser):
     # username, email, password_hash
     # Remove default username, use email as login
-    staffid = models.CharField(max_length=64, unique=True)
     profile_picture = models.ImageField(default=None, null=True, blank=True)
 
     # Role field to distinguish admin and marker
@@ -15,7 +14,7 @@ class User(AbstractUser):
         ('admin', 'Administrator'),
         ('marker', 'Marker')
     ]
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='marker')
 
     def __str__(self):
         return f"{self.email} ({self.role})"

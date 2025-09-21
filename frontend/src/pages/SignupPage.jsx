@@ -2,16 +2,12 @@ import React from "react";
 import {
   Box,
   Button,
-  FormControl,
   Paper,
   TextField,
   Typography,
   InputAdornment,
   IconButton,
   Link,
-  InputLabel,
-  Select,
-  MenuItem,
   Snackbar,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
@@ -26,11 +22,9 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
   const [username, setUserName] = React.useState("");
-  const [staffId, setStaffId] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
-  const [role, setRole] = React.useState("");
 
   const [error, setError] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
@@ -44,29 +38,24 @@ export default function SignupPage() {
 
   const handleSubmit = async () => {
     if (!username) return setError(true), setErrorMessage("Please enter your username!");
-    if (!staffId)
-      return setError(true), setErrorMessage("Please enter the staff ID!");
-    if (!email)
-      return setError(true), setErrorMessage("Please enter the email!");
+    if (!email) return setError(true), setErrorMessage("Please enter the email!");
+    if (!validateEmail(email))
+      return setError(true), setErrorMessage("Please provide a valid email!");
     if (password.length < 6)
       return (
         setError(true),
         setErrorMessage("Password should be more than 6 characters!")
       );
-    if (!role)
-      return setError(true), setErrorMessage("You must select a role!");
-    if (!validateEmail(email))
-      return setError(true), setErrorMessage("Please provide a valid email!");
     if (!passwordMatch(password, confirmPassword))
       return setError(true), setErrorMessage("Passwords do not match!");
 
-    const signupData = { username, staffId, email, password, role };
+    const signupData = { username, email, password };
 
     try {
       const response = await fetch("http://localhost:8000/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials : "include",
+        credentials: "include",
         body: JSON.stringify(signupData),
       });
       const data = await response.json();
@@ -101,15 +90,6 @@ export default function SignupPage() {
             margin="normal"
             value={username}
             onChange={(e) => setUserName(e.target.value)}
-            sx={{ bgcolor: "white", borderRadius: 1 }}
-          />
-          <TextField
-            label="Staff ID"
-            fullWidth
-            required
-            margin="normal"
-            value={staffId}
-            onChange={(e) => setStaffId(e.target.value)}
             sx={{ bgcolor: "white", borderRadius: 1 }}
           />
           <TextField
@@ -153,9 +133,7 @@ export default function SignupPage() {
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton
-                    onClick={() =>
-                      setShowConfirmPassword(!showConfirmPassword)
-                    }
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
@@ -164,19 +142,6 @@ export default function SignupPage() {
               sx: { bgcolor: "white", borderRadius: 1 },
             }}
           />
-          <FormControl fullWidth margin="normal" required>
-            <InputLabel id="role-label">Register as</InputLabel>
-            <Select
-              labelId="role-label"
-              id="select-role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              sx={{ bgcolor: "white", borderRadius: 1 }}
-            >
-              <MenuItem value="admin">Administrator</MenuItem>
-              <MenuItem value="marker">Marker</MenuItem>
-            </Select>
-          </FormControl>
 
           <Button
             onClick={handleSubmit}

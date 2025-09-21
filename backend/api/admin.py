@@ -8,14 +8,14 @@ from .models import User, Assignment, Submission, Mark
 # ------------------------------
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ('username', 'email', 'role', 'staffid')
+    list_display = ('username', 'email', 'role',)
     list_filter = ('role', 'is_staff', 'is_superuser', 'is_active')
-    search_fields = ('email', 'staffid')
+    search_fields = ('email',)
     ordering = ('email',)
 
     fieldsets = (
         (None, {'fields': ('username', 'email', 'password')}),
-        (_('Personal info'), {'fields': ('staffid', 'profile_picture')}),
+        (_('Personal info'), {'fields': ('profile_picture', )}),
         (_('Permissions'), {'fields': ('role', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
     )
@@ -23,7 +23,7 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username','email', 'password1', 'password2', 'role', 'staffid', 'profile_picture', 'is_active', 'is_staff', 'is_superuser')}
+            'fields': ('username','email', 'password1', 'password2', 'role', 'profile_picture', 'is_active', 'is_staff', 'is_superuser')}
         ),
     )
 

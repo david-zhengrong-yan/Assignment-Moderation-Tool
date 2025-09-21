@@ -1,7 +1,6 @@
 import React from "react";
-import { AppBar, Toolbar, Box, Link } from "@mui/material";
+import { AppBar, Toolbar, Box, Link, Typography } from "@mui/material";
 import { Link as RouterLink } from "react-router";
-import deakinLogo from "../assets/logo_deakin-rebrand-stacked.png";
 
 // Export height constant
 export const TOPBAR_HEIGHT = 100;
@@ -14,27 +13,31 @@ export default function Topbar() {
         bgcolor: "black",
         boxShadow: 1,
         height: TOPBAR_HEIGHT,
-        display: "flex",           // make AppBar a flex container
-        justifyContent: "center",  // horizontal centering if needed
+        display: "flex",
+        justifyContent: "center",
       }}
     >
       <Toolbar
         sx={{
           minHeight: TOPBAR_HEIGHT,
           display: "flex",
-          alignItems: "center",    // vertical centering
-          justifyContent: "flex-start", // logo on left
-          px: 3,                   // horizontal padding
+          alignItems: "center",
+          justifyContent: "flex-start",
+          px: 3,
           width: "100%",
         }}
       >
         <Link component={RouterLink} to="/" underline="none">
-          <Box
-            component="img"
-            src={deakinLogo}
-            alt="Deakin Logo"
-            sx={{ height: 64, display: "block" }} // block ensures vertical centering
-          />
+          <Typography
+            variant="h6"
+            sx={{
+              color: "white",
+              fontWeight: "bold",
+              letterSpacing: 0.5,
+            }}
+          >
+            Assignment Moderation Tool
+          </Typography>
         </Link>
       </Toolbar>
     </AppBar>
