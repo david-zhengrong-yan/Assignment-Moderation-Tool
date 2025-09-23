@@ -1,15 +1,14 @@
-name: CI/CD
+name: CI
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  pull_request
 
 jobs:
   python-lint:
     runs-on: ubuntu-latest
-    continue-on-error: true
+    outputs:
+      failed: ${{ steps.check-fail.outputs.failed }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,9 +32,18 @@ jobs:
         working-directory: backend
         run: black --check . | tee black-report.txt || true
 
+      - name: Check if lint failed
+        id: check-fail
+        run: |
+          if [ $? -ne 0 ]; then
+            echo "failed=true" >> $GITHUB_OUTPUT
+          else
+            echo "failed=false" >> $GITHUB_OUTPUT
+
   react-lint:
     runs-on: ubuntu-latest
-    continue-on-error: true
+    outputs:
+      failed: ${{ steps.check-fail.outputs.failed }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -53,9 +61,18 @@ jobs:
         working-directory: frontend
         run: npm run lint | tee eslint-report.txt || true
 
+      - name: Check if ESLint failed
+        id: check-fail
+        run: |
+          if [ $? -ne 0 ]; then
+            echo "failed=true" >> $GITHUB_OUTPUT
+          else
+            echo "failed=false" >> $GITHUB_OUTPUT
+
   backend-test:
     runs-on: ubuntu-latest
-    needs: python-lint  # optional: run after lint
+    outputs:
+      failed: ${{ steps.check-fail.outputs.failed }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -73,8 +90,15 @@ jobs:
 
       - name: Run Django Tests
         working-directory: backend
+        run: python manage.py test --verbosity=2 || true
+
+      - name: Check if tests failed
+        id: check-fail
         run: |
-          python manage.py test --verbosity=2
+          if [ $? -ne 0 ]; then
+            echo "failed=true" >> $GITHUB_OUTPUT
+          else
+            echo "failed=false" >> $GITHUB_OUTPUT
 
   summary:
     runs-on: ubuntu-latest
@@ -83,16 +107,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Print lint summaries
+      - name: Print Python lint summary
         run: |
           echo "## 🐍 Python Lint Report"
           cat backend/pylint-report.txt || echo "No pylint report found"
           echo "## 🖤 Black Format Report"
           cat backend/black-report.txt || echo "No black report found"
+
+      - name: Print React lint summary
+        run: |
           echo "## ⚛️ React ESLint Report"
           cat frontend/eslint-report.txt || echo "No ESLint report found"
 
-      - name: Print Django Test Summary
+      - name: Print Django test summary
         run: |
           echo "## 🧪 Django Test Report"
-          # Django prints tests directly, no separate report file needed
+          echo "Check Actions log for detailed test output."
+
+      - name: Fail PR if any job failed
+        if: needs.python-lint.outputs.failed == 'true' || needs.react-lint.outputs.failed == 'true' || needs.backend-test.outputs.failed == 'true'
+        run: exit 1
