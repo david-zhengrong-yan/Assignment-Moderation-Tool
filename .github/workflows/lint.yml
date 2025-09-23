@@ -7,16 +7,14 @@ on:
     branches: [ main ]
 
 jobs:
-  lint:
+  python-lint:
     runs-on: ubuntu-latest
-
+    outputs:
+      pylint-failed: ${{ steps.check-fail.outputs.failed }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # -------------------------------
-      # 🔹 Python Backend Linting
-      # -------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -30,15 +28,33 @@ jobs:
 
       - name: Run pylint
         working-directory: backend
-        run: pylint $(git ls-files '*.py')
+        run: |
+          pylint $(git ls-files '*.py') | tee pylint-report.txt
+          if [ "${PIPESTATUS[0]}" -ne 0 ]; then exit 1; fi
 
       - name: Run black (format check only)
         working-directory: backend
-        run: black --check .
+        run: |
+          black --check . | tee black-report.txt
+          if [ "${PIPESTATUS[0]}" -ne 0 ]; then exit 1; fi
 
-      # -------------------------------
-      # 🔹 React Frontend Linting
-      # -------------------------------
+      - name: Check if failed
+        id: check-fail
+        run: |
+          if grep -q "Your code has been rated at 10.00/10" pylint-report.txt; then
+            echo "failed=false" >> $GITHUB_OUTPUT
+          else
+            echo "failed=true" >> $GITHUB_OUTPUT
+          fi
+
+  react-lint:
+    runs-on: ubuntu-latest
+    outputs:
+      eslint-failed: ${{ steps.check-fail.outputs.failed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -50,4 +66,35 @@ jobs:
 
       - name: Run ESLint
         working-directory: frontend
-        run: npm run lint
+        run: |
+          npm run lint | tee eslint-report.txt
+          if [ "${PIPESTATUS[0]}" -ne 0 ]; then exit 1; fi
+
+      - name: Check if failed
+        id: check-fail
+        run: |
+          if grep -q "error" eslint-report.txt; then
+            echo "failed=true" >> $GITHUB_OUTPUT
+          else
+            echo "failed=false" >> $GITHUB_OUTPUT
+          fi
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: [python-lint, react-lint]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Print lint summaries
+        run: |
+          echo "## 🐍 Python Lint Report"
+          cat backend/pylint-report.txt || echo "No pylint report found"
+          echo "## 🖤 Black Format Report"
+          cat backend/black-report.txt || echo "No black report found"
+          echo "## ⚛️ React ESLint Report"
+          cat frontend/eslint-report.txt || echo "No ESLint report found"
+
+      - name: Fail PR if any lint failed
+        if: needs.python-lint.outputs.pylint-failed == 'true' || needs.react-lint.outputs.eslint-failed == 'true'
+        run: exit 1
