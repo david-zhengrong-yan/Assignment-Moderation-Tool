@@ -11,6 +11,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Pagination,
+  PaginationItem,
   Typography,
 } from "@mui/material";
 import Navbar from "../components/Navbar";
@@ -64,10 +66,61 @@ function PDFViewer({ file }) {
   );
 }
 
+const CriteriaCard = ({ criteria }) => {
+  const [page, setPage] = React.useState(1);
+  const handleChange = (event, value) => {
+    setPage(value);
+  };
+  return (
+    <Box sx={{ mb: 4, mt: 4 }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        {criteria.index}. {criteria.title}
+      </Typography>
+      <Pagination page={page} onChange={handleChange} shape="rounded" variant="outlined" sx={{ width: '100%' }} count={criteria.items.length} color="primary" renderItem={(item) => {
+        item.page = '';
+        if (item.selected) {
+          item.page = "√";
+        }
+        return <PaginationItem sx={{ flex: 1 }} {...item} />;
+      }} />
+      <div style={{display: 'flex'}}>
+        <Typography variant="h6" sx={{ flex: 1, mb: 2, color: '#66CCFF' }}>
+          {criteria.items[page - 1].level}
+        </Typography>
+        <Typography variant="h6" sx={{ mb: 2, color: '#66CCFF' }}>
+          {criteria.items[page - 1].mark} / {criteria.totalMark}
+        </Typography>
+      </div>
+
+      <p>
+        {criteria.items[page - 1].description}
+      </p>
+    </Box>
+  )
+}
+
 export default function MarkingPage() {
-  const [questions, setQuestions] = useState([
-    { index: 1, question: 'Question1', fullMark: 5, getMark: 3 },
-    { index: 1, question: 'Question2', fullMark: 7, getMark: 4 },
+  const [criterias, setCriterias] = useState([
+    {
+      index: 1, title: 'Introduction: Applies...',
+      totalMark: 15,
+      items: [{ level: "High Distinction", description: "Text Here", mark: 15 },
+      { level: "2", description: "Text Here", mark: 11 },
+      { level: "3", description: "Text Here", mark: 8 },
+      { level: "4", description: "Text Here", mark: 4 },
+      { level: "5", description: "Text Here", mark: 2 }
+      ]
+    },
+    {
+      index: 2, title: 'Introduction: Locates....',
+      totalMark: 10,
+      items: [{ level: "High Distinction", description: "Text Here", mark: 10 },
+      { level: "2", description: "Text Here", mark: 8 },
+      { level: "3", description: "Text Here", mark: 4 },
+      { level: "4", description: "Text Here", mark: 6 },
+      { level: "5", description: "Text Here", mark: 2 }
+      ]
+    },
   ]);
 
   const navbarWidth = 200;
@@ -109,31 +162,13 @@ export default function MarkingPage() {
               {renderFileViewer(assignmentFile)}
             </div>
             <div style={{ width: '50%' }}>
-              <Box sx={{ display: "flex", gap: 1, mb: 2, justifyContent: 'center' }}>
-                <Typography variant="h5" sx={{ mb: 2, width: '33%', textAlign: 'center' }}>
-                  Question
-                </Typography>
-                <Typography variant="h5" sx={{ mb: 2, width: '33%', textAlign: 'center' }}>
-                  Full mark
-                </Typography>
-                <Typography variant="h5" sx={{ mb: 2, width: '33%', textAlign: 'center' }}>
-                  Your mark
-                </Typography>
-              </Box>
+              <Typography variant="h5" sx={{ mb: 2 }}>
+                Criteria
+              </Typography>
               {
-                questions.map(question => {
+                criterias.map(criteria => {
                   return (
-                    <Box key={question.index} sx={{ display: "flex", gap: 1, mb: 2, justifyContent: 'center' }}>
-                      <div style={{ background: '#E5E5E5', borderRadius: '4px', width: '33%', textAlign: 'center' }}>
-                        {question.question}
-                      </div>
-                      <div style={{ background: '#E5E5E5', borderRadius: '4px', width: '33%', textAlign: 'center' }}>
-                        {question.fullMark}
-                      </div>
-                      <div style={{ background: '#E5E5E5', borderRadius: '4px', width: '33%', textAlign: 'center' }}>
-                        {question.getMark}
-                      </div>
-                    </Box>
+                    <CriteriaCard criteria={criteria} key={criteria.index} />
                   )
                 })
               }
