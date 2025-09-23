@@ -11,9 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # -------------------------------
-      # 🔹 Checkout code
-      # -------------------------------
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -31,34 +28,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run pylint (with score threshold)
+      - name: Run pylint
         working-directory: backend
-        run: |
-          set +e  # allow script to continue even if pylint exits non-zero
-          
-          echo "Running pylint..."
-          pylint --rcfile=../.pylintrc $(git ls-files '*.py') > pylint-report.txt
-          
-          # Extract global score from last two lines
-          SCORE=$(tail -n 2 pylint-report.txt | grep -oP '\d+(\.\d+)?(?=/10)')
-          echo "Pylint score: $SCORE/10"
-          
-          # Fail if score < 4.0
-          if [ -z "$SCORE" ]; then
-            echo "⚠️ Could not parse pylint score, failing for safety."
-            cat pylint-report.txt
-            exit 1
-          fi
-
-          if (( $(echo "$SCORE < 4.0" | bc -l) )); then
-            echo "❌ Pylint score too low (< 4.0/10)"
-            cat pylint-report.txt
-            exit 1
-          fi
-          
-          # Show report
-          cat pylint-report.txt
-          exit 0
+        run: pylint $(git ls-files '*.py')
 
       - name: Run black (format check only)
         working-directory: backend
