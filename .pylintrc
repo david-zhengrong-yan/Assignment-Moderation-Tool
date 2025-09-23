@@ -1,0 +1,44 @@
+[MASTER]
+ignore=venv,migrations
+load-plugins=
+jobs=1
+
+[MESSAGES CONTROL]
+# Disable some noisy rules
+disable=
+    C0114,  # missing-module-docstring
+    C0115,  # missing-class-docstring
+    C0116,  # missing-function-docstring
+    R0903,  # too-few-public-methods
+    R0902,  # too-many-instance-attributes
+    R0913,  # too-many-arguments
+    R0914,  # too-many-locals
+    R0915,  # too-many-statements
+    W0511,  # fixme (TODO comments)
+
+[REPORTS]
+output-format=colorized
+reports=no
+score=no
+
+[FORMAT]
+max-line-length=100
+indent-string='    '
+good-names=i,j,k,ex,_,pk,id
+
+[BASIC]
+# Naming conventions
+variable-rgx=[a-z_][a-z0-9_]{0,30}$
+argument-rgx=[a-z_][a-z0-9_]{0,30}$
+attr-rgx=[a-z_][a-z0-9_]{0,30}$
+class-rgx=[A-Z_][a-zA-Z0-9]+$
+const-rgx=([A-Z_][A-Z0-9_]*)|(__.*__)
+function-rgx=[a-z_][a-z0-9_]{0,30}$
+
+[DESIGN]
+max-args=6
+max-attributes=10
+max-branches=12
+max-locals=15
+max-returns=6
+max-statements=50
