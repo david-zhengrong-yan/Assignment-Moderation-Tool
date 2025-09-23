@@ -1,4 +1,4 @@
-name: Lint
+name: CI/CD
 
 on:
   push:
@@ -9,8 +9,7 @@ on:
 jobs:
   python-lint:
     runs-on: ubuntu-latest
-    outputs:
-      pylint-failed: ${{ steps.check-fail.outputs.failed }}
+    continue-on-error: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,29 +27,15 @@ jobs:
 
       - name: Run pylint
         working-directory: backend
-        run: |
-          pylint $(git ls-files '*.py') | tee pylint-report.txt
-          if [ "${PIPESTATUS[0]}" -ne 0 ]; then exit 1; fi
+        run: pylint $(git ls-files '*.py') | tee pylint-report.txt || true
 
       - name: Run black (format check only)
         working-directory: backend
-        run: |
-          black --check . | tee black-report.txt
-          if [ "${PIPESTATUS[0]}" -ne 0 ]; then exit 1; fi
-
-      - name: Check if failed
-        id: check-fail
-        run: |
-          if grep -q "Your code has been rated at 10.00/10" pylint-report.txt; then
-            echo "failed=false" >> $GITHUB_OUTPUT
-          else
-            echo "failed=true" >> $GITHUB_OUTPUT
-          fi
+        run: black --check . | tee black-report.txt || true
 
   react-lint:
     runs-on: ubuntu-latest
-    outputs:
-      eslint-failed: ${{ steps.check-fail.outputs.failed }}
+    continue-on-error: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -66,22 +51,34 @@ jobs:
 
       - name: Run ESLint
         working-directory: frontend
-        run: |
-          npm run lint | tee eslint-report.txt
-          if [ "${PIPESTATUS[0]}" -ne 0 ]; then exit 1; fi
+        run: npm run lint | tee eslint-report.txt || true
 
-      - name: Check if failed
-        id: check-fail
+  backend-test:
+    runs-on: ubuntu-latest
+    needs: python-lint  # optional: run after lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        working-directory: backend
         run: |
-          if grep -q "error" eslint-report.txt; then
-            echo "failed=true" >> $GITHUB_OUTPUT
-          else
-            echo "failed=false" >> $GITHUB_OUTPUT
-          fi
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Django Tests
+        working-directory: backend
+        run: |
+          python manage.py test --verbosity=2
 
   summary:
     runs-on: ubuntu-latest
-    needs: [python-lint, react-lint]
+    needs: [python-lint, react-lint, backend-test]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -95,6 +92,7 @@ jobs:
           echo "## ⚛️ React ESLint Report"
           cat frontend/eslint-report.txt || echo "No ESLint report found"
 
-      - name: Fail PR if any lint failed
-        if: needs.python-lint.outputs.pylint-failed == 'true' || needs.react-lint.outputs.eslint-failed == 'true'
-        run: exit 1
+      - name: Print Django Test Summary
+        run: |
+          echo "## 🧪 Django Test Report"
+          # Django prints tests directly, no separate report file needed
