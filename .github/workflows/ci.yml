@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-  pull_request
+    branches: ["*"]       # run on any branch push
+  pull_request:
+    branches: ["*"]       # run on any branch PR
 
 jobs:
   python-lint:
