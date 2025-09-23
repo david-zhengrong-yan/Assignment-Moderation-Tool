@@ -28,9 +28,26 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run pylint
+      - name: Run pylint (with score threshold)
         working-directory: backend
-        run: pylint $(git ls-files '*.py')
+        run: |
+          # Run pylint, save output
+          pylint --rcfile=../.pylintrc $(git ls-files '*.py') > pylint-report.txt || true
+          
+          # Extract the global score (last line like "Your code has been rated at 7.50/10")
+          SCORE=$(tail -n 2 pylint-report.txt | grep -oP '\d+(\.\d+)?(?=/10)')
+          
+          echo "Pylint score: $SCORE/10"
+          
+          # Fail job if score < 4.0
+          if (( $(echo "$SCORE < 4.0" | bc -l) )); then
+            echo "❌ Pylint score too low (< 4.0/10)"
+            cat pylint-report.txt
+            exit 1
+          fi
+          
+          # Show report
+          cat pylint-report.txt
 
       - name: Run black (format check only)
         working-directory: backend
