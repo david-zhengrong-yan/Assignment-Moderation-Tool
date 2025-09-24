@@ -12,6 +12,8 @@ import EditAccountPage from "./pages/EditAccountPage";
 import AssignmentPage from "./pages/AssignmentPage";
 import CreateAssignmentPage from "./pages/CreateAssignmentPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import MarkerPage from "./pages/MarkerPage";
+import MarkingPage from "./pages/MarkingPage";
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
         <Route path="/:userId/assignment/:assignmentId" element={<AssignmentPage />} />
         <Route path="/:userId/assignment/:assignmentId/edit" element={<AssignmentPage />} />
         <Route path="/:userId/assignment/create" element={<CreateAssignmentPage />} />
+        <Route path="/marker" element={ <MarkerPage />} />
+        <Route path="/marking" element={ <MarkingPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
   );
