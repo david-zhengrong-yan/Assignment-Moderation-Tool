@@ -1,4 +1,6 @@
 // src/pages/CreateAssignmentPage.jsx
+// Adds: DOCX rubric import + editable rubric table + submit structured rubric.
+
 import * as React from "react";
 import {
   Box,
@@ -26,6 +28,10 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import Navbar from "../components/Navbar";
 
+// NEW: rubric parser + editor
+import { parseDocxToRubric } from "../utils/rubricDocx";
+import RubricEditor from "../components/RubricEditor";
+
 const LEFT_NAV_WIDTH = 200;
 
 export default function CreateAssignmentPage() {
@@ -34,7 +40,7 @@ export default function CreateAssignmentPage() {
   const [dueDate, setDueDate] = React.useState(dayjs());
 
   const [assignmentFiles, setAssignmentFiles] = React.useState([]);
-  const [rubricFiles, setRubricFiles] = React.useState([]);
+  const [rubric, setRubric] = React.useState({ levels: [], criteria: [] });
 
   const [sub1Files, setSub1Files] = React.useState([]);
   const [sub2Files, setSub2Files] = React.useState([]);
@@ -60,25 +66,34 @@ export default function CreateAssignmentPage() {
       },
     ]);
   };
-
-  const updateQuestion = (id, key, value) => {
+  const updateQuestion = (id, key, value) =>
     setQuestions((prev) =>
       prev.map((q) => (q.id === id ? { ...q, [key]: value } : q))
     );
-  };
-
-  const removeQuestion = (id) => {
+  const removeQuestion = (id) =>
     setQuestions((prev) => prev.filter((q) => q.id !== id));
-  };
 
   const onUpload = (setter) => (e) => {
     const files = Array.from(e.target.files || []);
     setter((prev) => [...prev, ...files]);
     e.target.value = "";
   };
-
-  const deleteFileAt = (setter) => (idx) => {
+  const deleteFileAt = (setter) => (idx) =>
     setter((prev) => prev.filter((_, i) => i !== idx));
+
+  // ===== Rubric import (.docx) =====
+  const handleImportRubric = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try {
+      const parsed = await parseDocxToRubric(f);
+      setRubric(parsed);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to import rubric. Please check the document format.");
+    } finally {
+      e.target.value = "";
+    }
   };
 
   // ===== Validation =====
@@ -88,18 +103,16 @@ export default function CreateAssignmentPage() {
 
   // ===== Actions =====
   const handleCancel = () => window.history.back();
-
   const handleCreate = () => {
     if (hasInvalid) {
       alert("❌ Error: Some questions have m1 + m2 exceeding Full Mark.");
       return;
     }
-
     const payload = {
       name,
       dueDate: dueDate?.toISOString(),
       assignmentFiles,
-      rubricFiles,
+      rubric, // send structured rubric (levels + criteria[maxScore/requireComment/cells])
       questions,
       submissions: [
         { files: sub1Files, feedback: sub1Feedback },
@@ -107,7 +120,7 @@ export default function CreateAssignmentPage() {
       ],
     };
     console.log("Create Assignment payload:", payload);
-    // call your API / navigate
+    // TODO: POST to your API
   };
 
   // ===== Styling =====
@@ -123,11 +136,7 @@ export default function CreateAssignmentPage() {
 
       <Box
         component="main"
-        sx={{
-          ml: `${LEFT_NAV_WIDTH}px`,
-          bgcolor: "#FFFFFF",
-          width: "auto",
-        }}
+        sx={{ ml: `${LEFT_NAV_WIDTH}px`, bgcolor: "#FFFFFF", width: "auto" }}
       >
         <Container maxWidth={false} sx={{ py: 5 }}>
           <Typography variant="h4" sx={{ mb: 3 }}>
@@ -138,7 +147,7 @@ export default function CreateAssignmentPage() {
             elevation={0}
             sx={{ p: 3, borderRadius: 2, bgcolor: "white", minHeight: "100vh" }}
           >
-            <Box container spacing={6}>
+            <Box container="true" spacing={6}>
               {/* Assignment Name */}
               <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
                 <Grid item xs={3}>
@@ -155,7 +164,7 @@ export default function CreateAssignmentPage() {
               </Grid>
 
               {/* Due Date */}
-              <Grid container spacing={7} alignItems="center" sx={{ mb: 3 }}>
+              <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
                 <Grid item xs={3}>
                   <Typography>Due Date:</Typography>
                 </Grid>
@@ -207,43 +216,41 @@ export default function CreateAssignmentPage() {
                 </Grid>
               </Grid>
 
-              {/* Rubric File */}
-              <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+              {/* Rubric Import + Editor */}
+              <Grid container spacing={2} alignItems="center" sx={{ mb: 1 }}>
                 <Grid item xs={3}>
-                  <Typography>Rubric File:</Typography>
+                  <Typography>Rubric:</Typography>
                 </Grid>
                 <Grid item xs={9}>
-                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                    {rubricFiles.map((f, i) => (
-                      <Chip
-                        key={i}
-                        label={f.name}
-                        onDelete={() => deleteFileAt(setRubricFiles)(i)}
-                      />
-                    ))}
-                    <Button
-                      component="label"
-                      startIcon={<UploadFile />}
-                      variant="outlined"
-                      size="small"
-                    >
-                      Upload (.pdf, .doc, .xls, .md)
-                      <input
-                        hidden
-                        multiple
-                        type="file"
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.md"
-                        onChange={onUpload(setRubricFiles)}
-                      />
-                    </Button>
-                  </Box>
+                  <Button
+                    component="label"
+                    startIcon={<UploadFile />}
+                    variant="outlined"
+                    size="small"
+                  >
+                    Import rubric (.docx)
+                    <input
+                      hidden
+                      type="file"
+                      accept=".docx"
+                      onChange={handleImportRubric}
+                    />
+                  </Button>
                 </Grid>
               </Grid>
 
-              {/* Questions */}
-              <Stack container spacing={2} sx={{ mb: 2 }}>
-                <Box item xs={12}>
-                  <Typography sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              {rubric?.levels?.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <RubricEditor rubric={rubric} setRubric={setRubric} />
+                </Box>
+              )}
+
+              {/* Questions (keep your existing section)
+              <Stack container="true" spacing={2} sx={{ mb: 2, mt: 4 }}>
+                <Box item="true" xs={12}>
+                  <Typography
+                    sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                  >
                     Question:
                     <Tooltip title="Set title, full mark, band marks, and accept rate for each question.">
                       <InfoOutlined fontSize="small" />
@@ -254,7 +261,6 @@ export default function CreateAssignmentPage() {
                 {questions.map((q) => {
                   const isInvalid =
                     Number(q.m1 || 0) + Number(q.m2 || 0) > Number(q.full || 0);
-
                   return (
                     <Box
                       key={q.id}
@@ -262,64 +268,68 @@ export default function CreateAssignmentPage() {
                         display: "flex",
                         alignItems: "flex-start",
                         flexWrap: "nowrap",
+                        gap: 1,
                       }}
                     >
-                      {/* Title */}
                       <TextField
                         size="small"
                         placeholder="Question"
                         value={q.title}
-                        onChange={(e) => updateQuestion(q.id, "title", e.target.value)}
+                        onChange={(e) =>
+                          updateQuestion(q.id, "title", e.target.value)
+                        }
                         sx={{ ...textFieldSx, flex: 2 }}
                       />
-
-                      {/* Full */}
                       <TextField
                         size="small"
                         label="Full Mark"
                         type="number"
                         value={q.full}
-                        onChange={(e) => updateQuestion(q.id, "full", e.target.value)}
+                        onChange={(e) =>
+                          updateQuestion(q.id, "full", e.target.value)
+                        }
                         sx={{ ...textFieldSx, flex: 1 }}
                         inputProps={{ min: 0 }}
                       />
-
-                      {/* M1 */}
                       <TextField
                         size="small"
                         label="Submission 1"
                         type="number"
                         value={q.m1}
-                        onChange={(e) => updateQuestion(q.id, "m1", e.target.value)}
+                        onChange={(e) =>
+                          updateQuestion(q.id, "m1", e.target.value)
+                        }
                         sx={{ ...textFieldSx, flex: 1 }}
                         inputProps={{ min: 0 }}
                         error={isInvalid}
                         helperText={isInvalid ? "m1 + m2 > Full" : ""}
                       />
-
-                      {/* M2 */}
                       <TextField
                         size="small"
                         label="Submission 2"
                         type="number"
                         value={q.m2}
-                        onChange={(e) => updateQuestion(q.id, "m2", e.target.value)}
+                        onChange={(e) =>
+                          updateQuestion(q.id, "m2", e.target.value)
+                        }
                         sx={{ ...textFieldSx, flex: 1 }}
                         inputProps={{ min: 0 }}
                         error={isInvalid}
                         helperText={isInvalid ? "m1 + m2 > Full" : ""}
                       />
-
-                      {/* Rule */}
                       <TextField
                         size="small"
                         label="Accept Rate"
                         value={q.rule}
-                        onChange={(e) => updateQuestion(q.id, "rule", e.target.value)}
+                        onChange={(e) =>
+                          updateQuestion(q.id, "rule", e.target.value)
+                        }
                         sx={{ ...textFieldSx, flex: 2 }}
                       />
-
-                      <IconButton size="small" onClick={() => removeQuestion(q.id)}>
+                      <IconButton
+                        size="small"
+                        onClick={() => removeQuestion(q.id)}
+                      >
                         <DeleteOutline />
                       </IconButton>
                     </Box>
@@ -327,7 +337,7 @@ export default function CreateAssignmentPage() {
                 })}
 
                 {/* Totals Row */}
-                <Box
+              {/* <Box
                   sx={{
                     display: "flex",
                     alignItems: "center",
@@ -360,13 +370,16 @@ export default function CreateAssignmentPage() {
                   <Box sx={{ width: 40 }} />
                 </Box>
 
-                {/* Add Question */}
                 <Box sx={{ mb: 2 }}>
-                  <Button onClick={addQuestion} startIcon={<AddCircleOutline />} size="small">
+                  <Button
+                    onClick={addQuestion}
+                    startIcon={<AddCircleOutline />}
+                    size="small"
+                  >
                     Add Question
                   </Button>
                 </Box>
-              </Stack>
+              </Stack>} */}
 
               {/* Submission 1 */}
               <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
@@ -466,7 +479,7 @@ export default function CreateAssignmentPage() {
                 />
               </Stack>
 
-              {/* Footer Actions */}
+              {/* Footer */}
               <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
                 <Button variant="outlined" onClick={handleCancel}>
                   Cancel
