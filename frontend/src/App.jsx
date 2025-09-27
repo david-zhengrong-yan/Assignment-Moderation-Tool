@@ -2,7 +2,7 @@
 // import reactLogo from './assets/react.svg'
 // import viteLogo from '/vite.svg'
 import "./App.css";
-import { Route, Routes, Navigate, BrowserRouter } from "react-router";
+import { Route, Routes } from "react-router";
 import SignupPage from "./pages/SignupPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
