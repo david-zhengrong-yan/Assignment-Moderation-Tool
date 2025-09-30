@@ -1,6 +1,8 @@
 import json
+import mimetypes
+import os
 from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, Http404, FileResponse
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.sessions.models import Session
 from django.utils.dateparse import parse_datetime
@@ -10,6 +12,9 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import User, Assignment, Mark, Submission
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.views.decorators.http import require_GET
+from django.core.serializers.json import DjangoJSONEncoder
+
 
 User = get_user_model()
 
@@ -573,7 +578,109 @@ def create_assignment_view(request):
         return JsonResponse({"errors": form.errors}, status=400)
 
 
-def assignment_detail_view(request):
-    print("Get single assignment")
-    pass
 
+
+
+@require_GET
+@csrf_exempt
+def assignment_detail_view(request, id):
+    """
+    Return a single assignment with submissions and marks info.
+    """
+    print("Get single assignment")
+    
+    try:
+        assignment = Assignment.objects.get(id=id)
+    except Assignment.DoesNotExist:
+        raise Http404("Assignment not found")
+    
+    # Serialize assignment
+    assignment_data = {
+        "id": assignment.id,
+        "name": assignment.name,
+        "creation_date": assignment.creation_date.isoformat(),
+        "due_date": assignment.due_date.isoformat(),
+        "file": assignment.assignment_file.url if assignment.assignment_file else None,
+        "rubric": assignment.rubric.url if assignment.rubric else None,
+        "mark_criteria": assignment.mark_criteria,
+        "administrator": {
+            "id": assignment.administrator.id,
+            "email": assignment.administrator.email,
+        } if assignment.administrator else None
+    }
+
+    # Serialize submissions
+    submissions_qs = Submission.objects.filter(assignment=assignment)
+    submissions_data = []
+    for submission in submissions_qs:
+        # Count markers who marked this submission
+        markers_count = Mark.objects.filter(submission=submission).count()
+        average_markers = 0
+        if markers_count > 0:
+            # Calculate average from all marks
+            all_marks = Mark.objects.filter(submission=submission)
+            total = 0
+            num_values = 0
+            for mark in all_marks:
+                # sum up all numeric values in marks JSON
+                for v in mark.marks.values():
+                    if isinstance(v, (int, float)):
+                        total += v
+                        num_values += 1
+            average_markers = total / num_values if num_values > 0 else 0
+
+        submissions_data.append({
+            "id": submission.id,
+            "name": submission.name,
+            "file": submission.submission_file.url if submission.submission_file else None,
+            "comment": submission.comment,
+            "markers": markers_count,
+            "totalMarkers": Mark.objects.filter(submission=submission).count(),  # same as markers_count
+            "averageMarkers": average_markers,
+        })
+
+    response_data = {
+        "assignment": assignment_data,
+        "submissions": submissions_data,
+    }
+
+    return JsonResponse(response_data, encoder=DjangoJSONEncoder, safe=False)
+
+
+
+# Download files
+
+
+
+# -------------------------------
+# Helper function to serve a file
+# -------------------------------
+def _serve_file(file_field):
+    if not file_field or not file_field.path or not os.path.exists(file_field.path):
+        raise Http404("File not found")
+    
+    mime_type, _ = mimetypes.guess_type(file_field.path)
+    response = FileResponse(open(file_field.path, 'rb'), content_type=mime_type)
+    response['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_field.path)}"'
+    return response
+
+# -------------------------------
+# Assignment file
+# -------------------------------
+def download_assignment_file(request, assignment_id):
+    assignment = get_object_or_404(Assignment, pk=assignment_id)
+    return _serve_file(assignment.assignment_file)
+
+# -------------------------------
+# Rubric file
+# -------------------------------
+def download_rubric_file(request, assignment_id):
+    assignment = get_object_or_404(Assignment, pk=assignment_id)
+    return _serve_file(assignment.rubric)
+
+# -------------------------------
+# Submission file
+# -------------------------------
+def download_submission_file(request, submission_id):
+    submission = get_object_or_404(Submission, pk=submission_id)
+    return _serve_file(submission.submission_file)
