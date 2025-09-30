@@ -1,3 +1,4 @@
+// src/pages/HomePage.jsx
 import React, { useState, useRef, useEffect } from "react";
 import {
   CssBaseline,
@@ -19,10 +20,6 @@ import { useParams, useNavigate } from "react-router-dom";
 
 export default function HomePage() {
   const sessionid = localStorage.getItem("sessionid");
-  const [filter, setFilter] = useState("all");
-  const [sort, setSort] = useState("a-z");
-  const [search, setSearch] = useState("");
-  const [appBarHeight, setAppBarHeight] = useState(0);
   const { userId } = useParams();
   const navigate = useNavigate();
 
@@ -31,9 +28,17 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // UI state
+  const [filter, setFilter] = useState("all");
+  const [sort, setSort] = useState("a-z");
+  const [search, setSearch] = useState("");
+
+  // Layout
   const navbarWidth = 200;
+  const [appBarHeight, setAppBarHeight] = useState(0);
   const appBarRef = useRef(null);
 
+  // Track AppBar height dynamically
   useEffect(() => {
     if (appBarRef.current) {
       setAppBarHeight(appBarRef.current.offsetHeight);
@@ -45,17 +50,17 @@ export default function HomePage() {
     }
   }, []);
 
+  // Handle search input
   const handleSearch = (event) => setSearch(event.target.value.toLowerCase());
 
-  // Fetch user info + assignments
+  // Fetch user + assignments
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
 
-        // 🔹 Fetch user info
+        // User
         const userRes = await fetch(`http://localhost:8000/api/${userId}/account`, {
-          method: "GET",
           headers: { "X-Session-ID": sessionid },
           credentials: "include",
         });
@@ -63,12 +68,14 @@ export default function HomePage() {
         const userData = await userRes.json();
         setUser(userData);
 
-        // 🔹 Fetch assignments
-        const assignmentsRes = await fetch(`http://localhost:8000/api/${userId}/assignments`, {
-          method: "GET",
-          headers: { "X-Session-ID": sessionid },
-          credentials: "include",
-        });
+        // Assignments
+        const assignmentsRes = await fetch(
+          `http://localhost:8000/api/${userId}/assignments`,
+          {
+            headers: { "X-Session-ID": sessionid },
+            credentials: "include",
+          }
+        );
         if (!assignmentsRes.ok) throw new Error("Failed to fetch assignments");
         const assignmentsData = await assignmentsRes.json();
         setAssignments(assignmentsData.assignments);
@@ -82,12 +89,10 @@ export default function HomePage() {
       }
     }
 
-    if (userId) {
-      fetchData();
-    }
-  }, [userId]);
+    if (userId) fetchData();
+  }, [userId, sessionid]);
 
-  // Filtering + sorting
+  // Apply filtering + sorting
   const filteredAssignments = assignments
     .filter(
       (a) =>
@@ -107,6 +112,7 @@ export default function HomePage() {
       return 0;
     });
 
+  // Card layout
   const cardWidth = 260;
   const cardHeight = 150;
   const cardGap = 12;
@@ -122,7 +128,6 @@ export default function HomePage() {
           sx={{
             flexGrow: 1,
             ml: `${navbarWidth}px`,
-            boxSizing: "border-box",
             minHeight: "100vh",
             display: "flex",
             flexDirection: "column",
@@ -130,7 +135,7 @@ export default function HomePage() {
             overflowY: "auto",
           }}
         >
-          {/* Sticky AppBar */}
+          {/* AppBar (sticky header) */}
           <AppBar
             ref={appBarRef}
             position="fixed"
@@ -189,10 +194,10 @@ export default function HomePage() {
             </Toolbar>
           </AppBar>
 
-          {/* Spacer */}
+          {/* Spacer for AppBar */}
           <Box sx={{ height: `${appBarHeight}px` }} />
 
-          {/* Loading / Error */}
+          {/* Loading / Error / Content */}
           {loading ? (
             <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
               <CircularProgress />
@@ -212,9 +217,9 @@ export default function HomePage() {
                 gap: cardGap,
               }}
             >
-              {filteredAssignments.map((a, index) => (
+              {filteredAssignments.map((a) => (
                 <Paper
-                  key={index}
+                  key={a.id}
                   sx={{
                     width: cardWidth,
                     height: cardHeight,
@@ -226,11 +231,15 @@ export default function HomePage() {
                     justifyContent: "space-between",
                     boxShadow: "0 2px 5px rgba(0,0,0,0.08)",
                     transition: "transform 0.2s, box-shadow 0.2s",
+                    cursor: "pointer",
                     "&:hover": {
                       transform: "translateY(-3px)",
                       boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
                     },
                   }}
+                  onClick={() =>
+                    navigate(`/${userId}/assignment/${a.id}`)
+                  }
                 >
                   <Box>
                     <Typography variant="h6">{a.name}</Typography>
@@ -250,6 +259,7 @@ export default function HomePage() {
                 </Paper>
               ))}
 
+              {/* Admin only: Add Assignment */}
               {user.role === "admin" && (
                 <Paper
                   sx={{

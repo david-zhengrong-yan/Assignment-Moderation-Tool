@@ -17,11 +17,14 @@ import {
 import Navbar from "../components/Navbar";
 import { DownloadIcon } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
+import { useParams } from "react-router";
 
 // Set worker for react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
-// Animated Circular Progress Component
+// ---------------------
+// Animated Circular Progress
+// ---------------------
 function CustomCircularProgress({ percent }) {
   const [progress, setProgress] = useState(0);
 
@@ -87,10 +90,14 @@ function CustomCircularProgress({ percent }) {
   );
 }
 
-// Submission Card Component
+// ---------------------
+// Submission Card
+// ---------------------
 function SubmissionCard({ submission }) {
-  const finishedPercentage = (submission.markers / submission.totalMarkers) * 100;
-  const averagePercentage = (submission.averageMarkers / submission.totalMarkers) * 100;
+  const finishedPercentage =
+    (submission.markers / submission.totalMarkers) * 100;
+  const averagePercentage =
+    (submission.averageMarkers / submission.totalMarkers) * 100;
 
   return (
     <Card
@@ -162,7 +169,9 @@ function SubmissionCard({ submission }) {
   );
 }
 
-// Full PDF Viewer Component
+// ---------------------
+// PDF Viewer
+// ---------------------
 function PDFViewer({ file }) {
   const [numPages, setNumPages] = useState(null);
   const [containerWidth, setContainerWidth] = useState(600);
@@ -171,10 +180,9 @@ function PDFViewer({ file }) {
     setNumPages(numPages);
   };
 
-  // Responsive width
   React.useEffect(() => {
     const updateWidth = () => {
-      const width = Math.min(window.innerWidth - 250, 800); // navbar + padding accounted
+      const width = Math.min(window.innerWidth - 250, 800);
       setContainerWidth(width);
     };
     updateWidth();
@@ -206,17 +214,29 @@ function PDFViewer({ file }) {
   );
 }
 
-// Main Assignment Page
-export default function AssignmentPage({ assignmentId }) {
+// ---------------------
+// Main Page
+// ---------------------
+export default function AssignmentPage() {
+  const { userId, assignmentId } = useParams();
   const [submissions] = useState([
-    { index: 1, markers: 2, totalMarkers: 5, averageMarkers: 3, file: "/files/submission1.pdf" },
-    { index: 2, markers: 2, totalMarkers: 10, averageMarkers: 3, file: "/files/submission2.pdf" },
+    {
+      index: 1,
+      markers: 2,
+      totalMarkers: 5,
+      averageMarkers: 3,
+      file: "/files/submission1.pdf",
+    },
+    {
+      index: 2,
+      markers: 2,
+      totalMarkers: 10,
+      averageMarkers: 3,
+      file: "/files/submission2.pdf",
+    },
   ]);
   const [open, setOpen] = useState(false);
   const navbarWidth = 200;
-
-  const handleClickOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
 
   const assignmentFile = "sample.pdf";
   const rubricFile = "/files/rubric.pdf";
@@ -225,7 +245,17 @@ export default function AssignmentPage({ assignmentId }) {
     if (file.endsWith(".pdf")) {
       return <PDFViewer file={file} />;
     } else if (file.match(/\.(jpg|jpeg|png|gif)$/)) {
-      return <img src={file} alt="file preview" style={{ maxWidth: "100%", maxHeight: 400, borderRadius: 4 }} />;
+      return (
+        <img
+          src={file}
+          alt="file preview"
+          style={{
+            maxWidth: "100%",
+            maxHeight: 400,
+            borderRadius: 4,
+          }}
+        />
+      );
     } else {
       return <Typography>Preview not available</Typography>;
     }
@@ -236,6 +266,24 @@ export default function AssignmentPage({ assignmentId }) {
     link.href = file;
     link.download = file.split("/").pop();
     link.click();
+  };
+
+  const handleDelete = async () => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/assignment/${assignmentId}/delete`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete assignment");
+      }
+
+      // Redirect immediately to home
+      window.location.href = `/${userId}/home`;
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Error deleting assignment: " + err.message);
+    }
   };
 
   return (
@@ -258,16 +306,21 @@ export default function AssignmentPage({ assignmentId }) {
           </Typography>
           <Typography sx={{ mb: 2 }}>Due date: xx/xx/xxxx</Typography>
 
+          {/* Assignment File */}
           <Typography variant="h5" sx={{ mb: 1 }}>
             Assignment File:
           </Typography>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 2 }}>
             {renderFileViewer(assignmentFile)}
-            <Button variant="outlined" onClick={() => downloadFile(assignmentFile)}>
+            <Button
+              variant="outlined"
+              onClick={() => downloadFile(assignmentFile)}
+            >
               Download Assignment
             </Button>
           </Box>
 
+          {/* Rubric File */}
           <Typography variant="h5" sx={{ mt: 2, mb: 1 }}>
             Rubric:
           </Typography>
@@ -278,6 +331,7 @@ export default function AssignmentPage({ assignmentId }) {
             </Button>
           </Box>
 
+          {/* Submissions */}
           <Typography variant="h5" sx={{ mt: 3, mb: 2 }}>
             Submissions
           </Typography>
@@ -287,27 +341,35 @@ export default function AssignmentPage({ assignmentId }) {
             ))}
           </Box>
 
-          {/* Buttons */}
+          {/* Action Buttons */}
           <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
-            <Button variant="contained" color="error" onClick={handleClickOpen}>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => setOpen(true)}
+            >
               Delete Assignment
             </Button>
-            <Button variant="contained" sx={{ background: "#D9D9D9", color: "black" }}>
+            <Button
+              variant="contained"
+              sx={{ background: "#D9D9D9", color: "black" }}
+            >
               Edit
             </Button>
           </Box>
 
-          {/* Delete Dialog */}
-          <Dialog open={open} onClose={handleClose}>
+          {/* Delete Confirm Dialog */}
+          <Dialog open={open} onClose={() => setOpen(false)}>
             <DialogTitle>Delete Assignment?</DialogTitle>
             <DialogContent>
               <DialogContentText>
-                Are you sure you want to delete this assignment? This action cannot be undone.
+                Are you sure you want to delete this assignment? All submissions
+                and marks will be deleted. This cannot be undone.
               </DialogContentText>
             </DialogContent>
             <DialogActions>
-              <Button onClick={handleClose}>Cancel</Button>
-              <Button color="error" onClick={() => alert("Delete logic here")}>
+              <Button onClick={() => setOpen(false)}>Cancel</Button>
+              <Button color="error" onClick={handleDelete}>
                 Delete
               </Button>
             </DialogActions>

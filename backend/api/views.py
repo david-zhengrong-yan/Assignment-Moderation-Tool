@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from .models import User, Assignment, Mark, Submission
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 
 User = get_user_model()
 
@@ -512,8 +513,13 @@ def show_assignments_view(request, id):
     )
 
 
-def delete_assignment_view(request):
-    return JsonResponse({"message" : "Assignment is deleted"})
+@csrf_exempt
+def delete_assignment_view(request, id):
+    if request.method == "DELETE":
+        assignment = get_object_or_404(Assignment, id=id)
+        assignment.delete()
+        return JsonResponse({"message": "Assignment and related submissions deleted successfully."})
+    return JsonResponse({"error": "Invalid request method."}, status=400)
 
 
 
@@ -570,3 +576,4 @@ def create_assignment_view(request):
 def assignment_detail_view(request):
     print("Get single assignment")
     pass
+
