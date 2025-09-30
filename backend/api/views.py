@@ -1,11 +1,12 @@
+import json
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.sessions.models import Session
-
+from django.utils.dateparse import parse_datetime
+from .forms import AssignmentCreateForm
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-import json
 from .models import User, Assignment, Mark, Submission
 from django.db.models import Q
 
@@ -514,9 +515,57 @@ def show_assignments_view(request, id):
 def delete_assignment_view(request):
     return JsonResponse({"message" : "Assignment is deleted"})
 
+
+
+
+@csrf_exempt
 def create_assignment_view(request):
-    print("Assignment is created")
-    return JsonResponse({"message" : "Assignment is created"})
+    if request.method != "POST":
+        return JsonResponse({"error": "Only POST allowed"}, status=405)
+    
+    sessionid = request.headers.get("X-Session-ID")
+    if not sessionid:
+        return JsonResponse(
+            {"successful": False, "message": "User is not logged in"},
+            status=401
+        )
+
+    administrator = request.user
+    if not administrator.is_authenticated or administrator.role != "admin":
+        return JsonResponse({"error": "Only administrators can create assignments"}, status=403)
+
+    # Parse submissions
+    submissions_data = []
+    i = 0
+    while f"submissions[{i}][name]" in request.POST:
+        submissions_data.append({
+            "name": request.POST.get(f"submissions[{i}][name]"),
+            "submission_file": request.FILES.get(f"submissions[{i}][submission_file]"),
+            "comment": request.POST.get(f"submissions[{i}][comment]", ""),
+            "admin_marks": request.POST.get(f"submissions[{i}][admin_marks]", "{}"),
+        })
+        i += 1
+
+    # Fill form data
+    form = AssignmentCreateForm(
+        {
+            "name": request.POST.get("name"),
+            "creation_date": request.POST.get("creation_date"),
+            "due_date": request.POST.get("due_date"),
+            "mark_criteria": request.POST.get("mark_criteria"),
+        },
+        {
+            "rubric": request.FILES.get("rubric"),
+            "assignment_file": request.FILES.get("assignment_file"),
+        },
+    )
+
+    if form.is_valid():
+        assignment = form.save(administrator=administrator, submissions_data=submissions_data)
+        return JsonResponse({"success": True, "assignment_id": assignment.id}, status=201)
+    else:
+        return JsonResponse({"errors": form.errors}, status=400)
+
 
 def assignment_detail_view(request):
     print("Get single assignment")
