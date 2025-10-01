@@ -368,7 +368,11 @@ export default function AssignmentPage() {
             <Button variant="contained" color="error" onClick={() => setOpen(true)}>
               Delete Assignment
             </Button>
-            <Button variant="contained" sx={{ background: "#D9D9D9", color: "black" }}>
+            <Button 
+              variant="contained" 
+              sx={{ background: "#D9D9D9", color: "black" }}
+              onClick={() => navigate(`/${userId}/assignment/${assignmentId}/edit`)}
+            >
               Edit
             </Button>
           </Box>

@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import User, Assignment, Mark, Submission
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from django.core.serializers.json import DjangoJSONEncoder
 
 
@@ -585,15 +585,13 @@ def create_assignment_view(request):
 @csrf_exempt
 def assignment_detail_view(request, id):
     """
-    Return a single assignment with submissions and marks info.
+    Return a single assignment with submissions, admin marks, and markers info.
     """
-    print("Get single assignment")
-    
     try:
         assignment = Assignment.objects.get(id=id)
     except Assignment.DoesNotExist:
         raise Http404("Assignment not found")
-    
+
     # Serialize assignment
     assignment_data = {
         "id": assignment.id,
@@ -617,12 +615,10 @@ def assignment_detail_view(request, id):
         markers_count = Mark.objects.filter(submission=submission).count()
         average_markers = 0
         if markers_count > 0:
-            # Calculate average from all marks
             all_marks = Mark.objects.filter(submission=submission)
             total = 0
             num_values = 0
             for mark in all_marks:
-                # sum up all numeric values in marks JSON
                 for v in mark.marks.values():
                     if isinstance(v, (int, float)):
                         total += v
@@ -634,8 +630,9 @@ def assignment_detail_view(request, id):
             "name": submission.name,
             "file": submission.submission_file.url if submission.submission_file else None,
             "comment": submission.comment,
+            "admin_marks": submission.admin_marks or {},  # <--- include admin marks
             "markers": markers_count,
-            "totalMarkers": Mark.objects.filter(submission=submission).count(),  # same as markers_count
+            "totalMarkers": markers_count,
             "averageMarkers": average_markers,
         })
 
@@ -645,6 +642,111 @@ def assignment_detail_view(request, id):
     }
 
     return JsonResponse(response_data, encoder=DjangoJSONEncoder, safe=False)
+
+
+@require_POST
+@csrf_exempt
+def edit_assignment_view(request, id):
+    """
+    Edit an existing assignment and its submissions.
+    - If rubric changes, reset all marker marks (wipe marks, keep entries, set is_finalized=False).
+    - If a submission file changes, reset only the marks for that submission.
+    """
+    session_id = request.headers.get("X-Session-ID")
+    if not session_id:
+        return JsonResponse(
+            {"successful": False, "message": "User is not logged in"},
+            status=401
+        )
+
+    try:
+        assignment = Assignment.objects.get(id=id)
+    except Assignment.DoesNotExist:
+        raise Http404("Assignment not found")
+
+    # ---------------- Parse POST data ----------------
+    name = request.POST.get("name")
+    due_date = request.POST.get("due_date")
+    mark_criteria = request.POST.get("mark_criteria")
+
+    if not name or not due_date or not mark_criteria:
+        return JsonResponse({"error": "Missing required fields"}, status=400)
+
+    try:
+        due_date_parsed = parse_datetime(due_date)
+        rubric_json = json.loads(mark_criteria)
+    except Exception as e:
+        return JsonResponse({"error": f"Invalid data format: {str(e)}"}, status=400)
+
+    # ---------------- Rubric change check ----------------
+    old_rubric = assignment.mark_criteria
+    rubric_changed = old_rubric != rubric_json
+
+    assignment.name = name
+    assignment.due_date = due_date_parsed
+    assignment.mark_criteria = rubric_json
+
+    # ---------------- Handle assignment & rubric files ----------------
+    if "assignment_file" in request.FILES:
+        assignment.assignment_file = request.FILES["assignment_file"]
+
+    if "rubric" in request.FILES:
+        assignment.rubric = request.FILES["rubric"]
+
+    assignment.save()
+
+    # ---------------- Handle submissions ----------------
+    for idx in range(2):  # Only two submissions
+        prefix = f"submissions[{idx}]"
+        sub_name = request.POST.get(f"{prefix}[name]")
+        sub_comment = request.POST.get(f"{prefix}[comment]")
+        sub_admin_marks = request.POST.get(f"{prefix}[admin_marks]")
+
+        if not sub_name or not sub_admin_marks:
+            return JsonResponse({"error": f"Submission {idx+1} data missing"}, status=400)
+
+        try:
+            sub_marks_json = json.loads(sub_admin_marks)
+        except Exception:
+            return JsonResponse({"error": f"Submission {idx+1} marks invalid JSON"}, status=400)
+
+        # Get or create submission
+        submission_qs = Submission.objects.filter(assignment=assignment, name=sub_name)
+        if submission_qs.exists():
+            submission = submission_qs.first()
+        else:
+            submission = Submission.objects.create(name=sub_name, assignment=assignment)
+
+        # ---------------- Check if submission file changed ----------------
+        file_field_name = f"{prefix}[submission_file]"
+        submission_file_changed = False
+        if file_field_name in request.FILES:
+            # If there was an existing file, compare names
+            if submission.submission_file:
+                old_name = submission.submission_file.name.split("/")[-1]
+                new_name = request.FILES[file_field_name].name
+                if old_name != new_name:
+                    submission_file_changed = True
+            else:
+                submission_file_changed = True
+
+            submission.submission_file = request.FILES[file_field_name]
+
+        # ---------------- Save submission data ----------------
+        submission.comment = sub_comment or ""
+        submission.admin_marks = sub_marks_json
+        submission.save()
+
+        # ---------------- Reset marker marks ----------------
+        if rubric_changed or submission_file_changed:
+            marks_qs = Mark.objects.filter(submission=submission)
+            for m in marks_qs:
+                m.marks = {}  # wipe all marks
+                m.is_finalized = False
+                m.save()
+
+    return JsonResponse({"success": True, "message": "Assignment updated successfully", "rubric_changed": rubric_changed})
+
 
 
 

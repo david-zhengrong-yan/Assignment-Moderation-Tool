@@ -14,6 +14,7 @@ import CreateAssignmentPage from "./pages/CreateAssignmentPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import MarkerPage from "./pages/MarkerPage";
 import MarkingPage from "./pages/MarkingPage";
+import EditAssignmentPage from "./pages/EditAssignmentPage";
 
 function App() {
   return (
@@ -25,10 +26,10 @@ function App() {
         <Route path="/:userId/account" element={<AccountPage />} />
         <Route path="/:userId/account/edit" element={<EditAccountPage />} />
         <Route path="/:userId/assignment/:assignmentId" element={<AssignmentPage />} />
-        <Route path="/:userId/assignment/:assignmentId/edit" element={<AssignmentPage />} />
+        <Route path="/:userId/assignment/:assignmentId/edit" element={<EditAssignmentPage />} />
         <Route path="/:userId/assignment/create" element={<CreateAssignmentPage />} />
-        <Route path="/marker" element={ <MarkerPage />} />
-        <Route path="/marking" element={ <MarkingPage />} />
+        <Route path="/:userId/marker/assignment/:assignmentId" element={ <MarkerPage />} />
+        <Route path="/:userId/submission/:submissionId" element={ <MarkingPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
   );

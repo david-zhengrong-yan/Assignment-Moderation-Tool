@@ -1,4 +1,3 @@
-// src/pages/CreateAssignmentPage.jsx
 import * as React from "react";
 import {
   Box,
@@ -9,444 +8,384 @@ import {
   TextField,
   Paper,
   Button,
-  IconButton,
   Chip,
-  Tooltip,
-  InputAdornment,
-  Stack,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Snackbar,
+  Alert,
 } from "@mui/material";
-import {
-  InfoOutlined,
-  DeleteOutline,
-  AddCircleOutline,
-  UploadFile,
-} from "@mui/icons-material";
+import { UploadFile } from "@mui/icons-material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import Navbar from "../components/Navbar";
+import { parseDocxToRubric } from "../utils/rubricDocx";
+import RubricEditor from "../components/RubricEditor";
+import { useNavigate, useParams } from "react-router-dom";
 
-// Match your Navbar's permanent Drawer width
 const LEFT_NAV_WIDTH = 200;
 
-export default function CreateAssignmentPage() {
-  // ===== Form state =====
+export default function EditAssignmentPage() {
+  const navigate = useNavigate();
+  const sessionid = localStorage.getItem("sessionid");
+  const { userId, assignmentId } = useParams();
+
+  // Assignment & Rubric
   const [name, setName] = React.useState("");
   const [dueDate, setDueDate] = React.useState(dayjs());
-  const [rubricFiles, setRubricFiles] = React.useState([]); // File[]
-  const [sub1Files, setSub1Files] = React.useState([]);
-  const [sub2Files, setSub2Files] = React.useState([]);
+  const [assignmentFile, setAssignmentFile] = React.useState(null);
+  const [existingAssignmentFile, setExistingAssignmentFile] = React.useState(null);
+  const [rubricFile, setRubricFile] = React.useState(null);
+  const [existingRubricFile, setExistingRubricFile] = React.useState(null);
+  const [rubric, setRubric] = React.useState({ levels: [], criteria: [] });
+
+  // Submissions
+  const [sub1File, setSub1File] = React.useState(null);
+  const [sub2File, setSub2File] = React.useState(null);
+  const [existingSub1File, setExistingSub1File] = React.useState(null);
+  const [existingSub2File, setExistingSub2File] = React.useState(null);
   const [sub1Feedback, setSub1Feedback] = React.useState("");
   const [sub2Feedback, setSub2Feedback] = React.useState("");
+  const [submissionMarks, setSubmissionMarks] = React.useState({
+    sub1: {},
+    sub2: {},
+  });
 
-  const [questions, setQuestions] = React.useState([
-    { id: 1, title: "Question 1", full: "", m1: "", m2: "", rule: "" },
-  ]);
-  const nextId = React.useRef(2);
+  // Snackbar
+  const [snackbar, setSnackbar] = React.useState({
+    open: false,
+    message: "",
+    severity: "error",
+  });
+  const showSnackbar = (msg, severity = "error") => setSnackbar({ open: true, message: msg, severity });
+  const handleCloseSnackbar = () => setSnackbar(prev => ({ ...prev, open: false }));
 
-  // ===== Question helpers (unchanged) =====
-  const addQuestion = () => {
-    setQuestions((prev) => [
-      ...prev,
-      {
-        id: nextId.current++,
-        title: `Question ${prev.length + 1}`,
-        full: "",
-        m1: "",
-        m2: "",
-        rule: "",
-      },
-    ]);
-  };
-  const updateQuestion = (id, key, value) => {
-    setQuestions((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, [key]: value } : q))
-    );
-  };
-  const removeQuestion = (id) => {
-    setQuestions((prev) => prev.filter((q) => q.id !== id));
-  };
-
-  // ===== File upload helpers (unchanged) =====
-  const onUpload = (setter) => (e) => {
-    const files = Array.from(e.target.files || []);
-    setter((prev) => [...prev, ...files]);
-    e.target.value = ""; // reset input
-  };
-  const deleteFileAt = (setter) => (idx) => {
-    setter((prev) => prev.filter((_, i) => i !== idx));
-  };
-
-  // ===== Actions (unchanged) =====
-  const handleCancel = () => window.history.back();
-  const handleCreate = () => {
-    const payload = {
-      name,
-      dueDate: dueDate?.toISOString(),
-      rubricFiles,
-      questions,
-      submissions: [
-        { files: sub1Files, feedback: sub1Feedback },
-        { files: sub2Files, feedback: sub2Feedback },
-      ],
-    };
-    console.log("Create Assignment payload:", payload);
-    // call your API / navigate
-  };
-
-  // ===== Styling: keep your first design TextField look =====
+  // TextField style
   const textFieldSx = {
-    bgcolor: "#F0F1F3",
-    "& .MuiInputBase-root": { borderRadius: 2 },
+    "& .MuiInputBase-root": { borderRadius: 2, bgcolor: "#F0F1F3" },
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "#ccc" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#999" },
   };
 
+  // ---------------- Load assignment data ----------------
+  React.useEffect(() => {
+    const fetchAssignment = async () => {
+      try {
+        const res = await fetch(`http://localhost:8000/api/assignment/${assignmentId}`, {
+          headers: { "X-Session-ID": sessionid },
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to fetch assignment");
+        const data = await res.json();
+
+        setName(data.assignment.name || "");
+        setDueDate(data.assignment.due_date ? dayjs(data.assignment.due_date) : dayjs());
+        setRubric(data.assignment.mark_criteria || { levels: [], criteria: [] });
+
+        // Existing files
+        if (data.assignment.file) setExistingAssignmentFile({ name: data.assignment.file.split("/").pop(), url: data.assignment.file });
+        if (data.assignment.rubric) setExistingRubricFile({ name: data.assignment.rubric.split("/").pop(), url: data.assignment.rubric });
+
+        // Submissions
+        if (data.submissions[0]) {
+          setExistingSub1File(data.submissions[0].file ? { name: data.submissions[0].file.split("/").pop(), url: data.submissions[0].file } : null);
+          setSub1Feedback(data.submissions[0].comment || "");
+          setSubmissionMarks(prev => ({ ...prev, sub1: data.submissions[0].admin_marks || {} }));
+        }
+        if (data.submissions[1]) {
+          setExistingSub2File(data.submissions[1].file ? { name: data.submissions[1].file.split("/").pop(), url: data.submissions[1].file } : null);
+          setSub2Feedback(data.submissions[1].comment || "");
+          setSubmissionMarks(prev => ({ ...prev, sub2: data.submissions[1].admin_marks || {} }));
+        }
+
+      } catch (err) {
+        console.error(err);
+        showSnackbar("Failed to load assignment");
+      }
+    };
+    fetchAssignment();
+  }, [assignmentId]);
+
+  // ---------------- File handlers ----------------
+  const handleSingleUpload = (setter) => (e) => {
+    const file = e.target.files?.[0];
+    if (file) setter(file);
+    e.target.value = "";
+  };
+  const deleteSingleFile = (setter) => () => setter(null);
+
+  const handleImportRubric = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setRubricFile(f);
+    try {
+      const parsed = await parseDocxToRubric(f);
+      setRubric(parsed);
+      setSubmissionMarks({ sub1: {}, sub2: {} });
+    } catch (err) {
+      console.error(err);
+      showSnackbar("Failed to import rubric. Please check the document format.");
+      setRubricFile(null);
+    } finally {
+      e.target.value = "";
+    }
+  };
+  const deleteRubricFile = () => {
+    setRubricFile(null);
+    setRubric({ levels: [], criteria: [] });
+    setSubmissionMarks({ sub1: {}, sub2: {} });
+    setExistingRubricFile(null);
+  };
+
+  // ---------------- Level selection ----------------
+  const handleLevelSelect = (sub, criterionId, levelId) => {
+    setSubmissionMarks(prev => ({
+      ...prev,
+      [sub]: { ...prev[sub], [criterionId]: levelId },
+    }));
+  };
+
+  // ---------------- Total calculation ----------------
+  const getSubmissionTotal = (sub) => {
+    if (!rubric.criteria?.length) return { achieved: 0, max: 0 };
+    let achieved = 0, max = 0;
+    rubric.criteria.forEach(c => {
+      const sel = submissionMarks[sub]?.[c.id];
+      if (sel) {
+        const idx = rubric.levels.findIndex(l => l.id === sel);
+        const cell = c.cells?.[idx];
+        if (cell?.max) achieved += cell.max;
+      }
+      const criterionMax = c.cells?.reduce((acc, cell) => (cell.max > acc ? cell.max : acc), 0) || 0;
+      max += criterionMax;
+    });
+    return { achieved, max };
+  };
+
+  const handleCancel = () => window.history.back();
+
+  // ---------------- Submit edit ----------------
+  const handleEdit = async () => {
+    if (!name.trim()) return showSnackbar("Please enter the assignment name.");
+    if (!dueDate) return showSnackbar("Please select the due date.");
+    if (!assignmentFile && !existingAssignmentFile) return showSnackbar("Please upload the assignment file.");
+    if (!rubricFile && !existingRubricFile) return showSnackbar("Please upload the rubric file.");
+    if (!rubric.criteria.length) return showSnackbar("Rubric is empty or invalid.");
+
+    for (const sub of ["sub1", "sub2"]) {
+      const file = sub === "sub1" ? (sub1File || existingSub1File) : (sub2File || existingSub2File);
+      if (!file) return showSnackbar(`Please upload a file for ${sub}.`);
+      const marks = submissionMarks[sub];
+      for (const c of rubric.criteria) if (!marks[c.id]) return showSnackbar(`Please select a mark for "${c.title}" in ${sub}.`);
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("due_date", dueDate.toISOString());
+      if (assignmentFile) formData.append("assignment_file", assignmentFile);
+      if (rubricFile) formData.append("rubric", rubricFile);
+      formData.append("mark_criteria", JSON.stringify(rubric));
+
+      const submissions = [
+        { name: "Submission 1", file: sub1File || existingSub1File, feedback: sub1Feedback, marks: submissionMarks.sub1 },
+        { name: "Submission 2", file: sub2File || existingSub2File, feedback: sub2Feedback, marks: submissionMarks.sub2 },
+      ];
+
+      submissions.forEach((s, idx) => {
+        formData.append(`submissions[${idx}][name]`, s.name);
+        if (s.file instanceof File) formData.append(`submissions[${idx}][submission_file]`, s.file);
+        formData.append(`submissions[${idx}][comment]`, s.feedback || "");
+        formData.append(`submissions[${idx}][admin_marks]`, JSON.stringify(s.marks));
+      });
+
+      const res = await fetch(`http://localhost:8000/api/assignment/${assignmentId}/edit`, {
+        method: "POST",
+        headers: { "X-Session-ID": sessionid },
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to update assignment");
+      }
+
+      showSnackbar("Assignment updated successfully!", "success");
+      setTimeout(() => navigate(`/${userId}/assignment/${assignmentId}`), 1500);
+
+    } catch (err) {
+      console.error(err);
+      showSnackbar("Error updating assignment: " + err.message);
+    }
+  };
+
+  // ---------------- Render ----------------
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <CssBaseline />
       <Navbar />
+      <Box component="main" sx={{ ml: `${LEFT_NAV_WIDTH}px`, bgcolor: "#FFFFFF", minHeight: "100vh", width: "100%", overflowX: "hidden", pb: 5 }}>
+        <Container maxWidth={false} sx={{ py: 5 }}>
+          <Typography variant="h4" sx={{ mb: 3 }}>Edit Assignment</Typography>
+          <Paper elevation={0} sx={{ p: 3, borderRadius: 2, bgcolor: "#FFFFFF", width: "100%" }}>
+            <Box container="true" spacing={6}>
 
-      {/* MAIN CONTENT — vertical sections per Figma */}
-      <Box
-        component="main"
-        sx={{
-          ml: `${LEFT_NAV_WIDTH}px`,
-          bgcolor: "#FFFFFF",
-          width: "auto",
-        }}
-      >
-        <Container
-          //   maxWidth="md"
-          maxWidth={false}
-          //   disableGutters
-          sx={{ py: 5, alignItems: "flex-start", justifyContent: "flex-start" }}
-        >
-          <Typography variant="h4" sx={{ mb: 3 }}>
-            Edit Assignment
-          </Typography>
-
-          <Paper
-            elevation={0}
-            sx={{ p: 3, borderRadius: 2, bgcolor: "white", minHeight: "100vh" }}
-          >
-            <Box container spacing={6}>
               {/* Assignment Name */}
               <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                <Grid item xs={3}>
-                  <Typography>Assignment Name:</Typography>
-                </Grid>
-                <Grid item xs={9}>
-                  <TextField
-                    id="outlined-basic"
-                    label="Enter assignment name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    sx={textFieldSx}
-                  />
+                <Grid item xs={12} sm={3}><Typography>Assignment Name:</Typography></Grid>
+                <Grid item xs={12} sm={9}>
+                  <TextField label="Enter assignment name" value={name} onChange={e => setName(e.target.value)} sx={textFieldSx} fullWidth />
                 </Grid>
               </Grid>
 
               {/* Due Date */}
-              <Grid container spacing={7} alignItems="center" sx={{ mb: 3 }}>
-                <Grid item xs={3}>
-                  <Typography>Due Date:</Typography>
-                </Grid>
-                <Grid item xs={9}>
-                  <DatePicker
-                    value={dueDate}
-                    onChange={setDueDate}
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        sx: textFieldSx,
-                        fullWidth: true,
-                      },
-                    }}
-                  />
-                </Grid>
-              </Grid>
-
-              {/* Rubric */}
               <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                <Grid item xs={3}>
-                  <Typography>Rubric:</Typography>
-                </Grid>
-                <Grid item xs={9}>
-                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                    {rubricFiles.map((f, i) => (
-                      <Chip
-                        key={i}
-                        label={f.name}
-                        onDelete={() => deleteFileAt(setRubricFiles)(i)}
-                      />
-                    ))}
-                    <Button
-                      component="label"
-                      startIcon={<UploadFile />}
-                      variant="outlined"
-                      size="small"
-                    >
-                      Upload (.pdf, .doc, .xls, .md)
-                      <input
-                        hidden
-                        multiple
-                        type="file"
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.md"
-                        onChange={onUpload(setRubricFiles)}
-                      />
-                    </Button>
-                  </Box>
+                <Grid item xs={12} sm={3}><Typography>Due Date:</Typography></Grid>
+                <Grid item xs={12} sm={9}>
+                  <DatePicker value={dueDate} onChange={setDueDate} slotProps={{ textField: { size: "small", sx: textFieldSx, fullWidth: true } }} />
                 </Grid>
               </Grid>
 
-              {/* Questions */}
-              <Stack container spacing={2} sx={{ mb: 2 }}>
-                <Box item xs={12}>
-                  <Typography
-                    sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                  >
-                    Question:
-                    <Tooltip title="Set title, full mark, band marks, and accept rate for each question.">
-                      <InfoOutlined fontSize="small" />
-                    </Tooltip>
-                  </Typography>
-                </Box>
-
-                {questions.map((q) => (
-                  <Box
-                    key={q.id}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "nowrap",
-                    }}
-                  >
-                    {/* Question title */}
-                    <TextField
-                      size="small"
-                      placeholder="Question"
-                      value={q.title}
-                      onChange={(e) =>
-                        updateQuestion(q.id, "title", e.target.value)
-                      }
-                      sx={{ ...textFieldSx, flex: 2 }}
-                    />
-
-                    {/* Full Mark */}
-                    <TextField
-                      size="small"
-                      id="outlined-basic"
-                      label="Full Mark"
-                      type="number"
-                      value={q.full}
-                      onChange={(e) =>
-                        updateQuestion(q.id, "full", e.target.value)
-                      }
-                      sx={{ ...textFieldSx, flex: 1 }}
-                      inputProps={{ min: 0 }}
-                    />
-
-                    {/* Mark 1 */}
-                    <TextField
-                      size="small"
-                      id="outlined-basic"
-                      label="Mark 1"
-                      type="number"
-                      value={q.m1}
-                      onChange={(e) =>
-                        updateQuestion(q.id, "m1", e.target.value)
-                      }
-                      sx={{ ...textFieldSx, flex: 1 }}
-                      inputProps={{ min: 0 }}
-                    />
-
-                    {/* Mark 2 */}
-                    <TextField
-                      size="small"
-                      id="outlined-basic"
-                      label="Mark 2"
-                      type="number"
-                      value={q.m2}
-                      onChange={(e) =>
-                        updateQuestion(q.id, "m2", e.target.value)
-                      }
-                      sx={{ ...textFieldSx, flex: 1 }}
-                      inputProps={{ min: 0 }}
-                    />
-
-                    {/* Accept Rate */}
-                    <TextField
-                      size="small"
-                      id="outlined-basic"
-                      label="Accept Rate"
-                      value={q.rule}
-                      onChange={(e) =>
-                        updateQuestion(q.id, "rule", e.target.value)
-                      }
-                      sx={{ ...textFieldSx, flex: 2 }}
-                    />
-
-                    {/* Delete button */}
-                    <IconButton
-                      size="small"
-                      onClick={() => removeQuestion(q.id)}
-                    >
-                      <DeleteOutline />
-                    </IconButton>
-                  </Box>
-                ))}
-
-                {/* Add Question button */}
-                <Box sx={{ mb: 2 }}>
-                  <Button
-                    onClick={addQuestion}
-                    startIcon={<AddCircleOutline />}
-                    size="small"
-                  >
-                    Add Question
-                  </Button>
-                </Box>
-              </Stack>
-
-              {/* Submission 1 */}
+              {/* Assignment File */}
               <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                {/* left Label */}
-                <Grid item xs={3}>
-                  <Typography>Submission 1:</Typography>
-                </Grid>
-
-                {/* right upload file area */}
-                <Grid item xs={9}>
+                <Grid item xs={12} sm={3}><Typography>Assignment File:</Typography></Grid>
+                <Grid item xs={12} sm={9}>
                   <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                    {sub1Files.map((f, i) => (
-                      <Chip
-                        key={i}
-                        label={f.name}
-                        onDelete={() => deleteFileAt(setSub1Files)(i)}
-                        size="small"
-                      />
-                    ))}
-
-                    <Button
-                      component="label"
-                      variant="outlined"
-                      size="small"
-                      startIcon={<UploadFile />}
-                      sx={{ textTransform: "none" }}
-                    >
-                      Upload (.pdf, .doc)
-                      <input
-                        hidden
-                        multiple
-                        type="file"
-                        accept=".pdf,.doc,.docx"
-                        onChange={onUpload(setSub1Files)}
-                      />
-                    </Button>
+                    {assignmentFile ? (
+                      <Chip label={assignmentFile.name} onDelete={deleteSingleFile(setAssignmentFile)} />
+                    ) : existingAssignmentFile ? (
+                      <Chip label={existingAssignmentFile.name} onDelete={() => setExistingAssignmentFile(null)} />
+                    ) : (
+                      <Button component="label" startIcon={<UploadFile />} variant="outlined" size="small">
+                        Upload (.pdf, .doc, .xls, .md)
+                        <input hidden type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.md" onChange={handleSingleUpload(setAssignmentFile)} />
+                      </Button>
+                    )}
                   </Box>
                 </Grid>
               </Grid>
 
-              {/* Submission 1 Feedback */}
-              <Stack
-                direction="column"
-                sx={{
-                  justifyContent: "flex-start",
-                  alignItems: "flex-start",
-                  mb: 3,
-                }}
-              >
-                <Typography>Submission 1 Feedback:</Typography>
-                <TextField
-                  fullWidth
-                  multiline
-                  minRows={3}
-                  id="outlined-basic"
-                  label="Add Comments"
-                  value={sub1Feedback}
-                  onChange={(e) => setSub1Feedback(e.target.value)}
-                  sx={textFieldSx}
-                />
-              </Stack>
-
-              {/* Submission 2 */}
-              <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                <Grid item xs={3}>
-                  <Typography>Submission 2:</Typography>
-                </Grid>
-                <Grid item xs={9}>
-                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                    {sub2Files.map((f, i) => (
-                      <Chip
-                        key={i}
-                        label={f.name}
-                        onDelete={() => deleteFileAt(setSub2Files)(i)}
-                        size="small"
-                      />
-                    ))}
-                    <Button
-                      component="label"
-                      variant="outlined"
-                      size="small"
-                      startIcon={<UploadFile />}
-                      sx={{ textTransform: "none" }}
-                    >
-                      Upload (.pdf, .md)
-                      <input
-                        hidden
-                        multiple
-                        type="file"
-                        accept=".pdf,.md"
-                        onChange={onUpload(setSub2Files)}
-                      />
-                    </Button>
+              {/* Rubric File */}
+              <Grid container spacing={2} alignItems="center" sx={{ mb: 1 }}>
+                <Grid item xs={12} sm={3}><Typography>Rubric:</Typography></Grid>
+                <Grid item xs={12} sm={9}>
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
+                    {rubricFile ? (
+                      <Chip label={rubricFile.name} onDelete={deleteRubricFile} color="primary" />
+                    ) : existingRubricFile ? (
+                      <Chip label={existingRubricFile.name} onDelete={deleteRubricFile} color="primary" />
+                    ) : (
+                      <Button component="label" startIcon={<UploadFile />} variant="outlined" size="small">
+                        Import rubric (.docx)
+                        <input hidden type="file" accept=".docx" onChange={handleImportRubric} />
+                      </Button>
+                    )}
                   </Box>
                 </Grid>
               </Grid>
 
-              {/* Submission 2 Feedback */}
-              <Stack
-                direction="column"
-                sx={{
-                  mb: 3,
-                  justifyContent: "flex-start",
-                  alignItems: "flex-start",
-                }}
-              >
-                <Typography>Submission 2 Feedback:</Typography>
-                <TextField
-                  fullWidth
-                  multiline
-                  minRows={3}
-                  id="outlined-basic"
-                  label="Add Comments"
-                  value={sub2Feedback}
-                  onChange={(e) => setSub2Feedback(e.target.value)}
-                  sx={textFieldSx}
-                />
-              </Stack>
+              {/* Rubric Editor */}
+              {rubric?.levels?.length > 0 && <Box sx={{ mt: 2, width: "100%" }}><RubricEditor rubric={rubric} setRubric={setRubric} /></Box>}
 
-              {/* Footer actions (centered like the Figma) */}
-              <Box item xs={12}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    gap: 2,
-                    mt: 1,
-                  }}
-                >
-                  <Button variant="outlined" onClick={handleCancel}>
-                    Cancel
-                  </Button>
-                  <Button variant="contained" onClick={handleCreate}>
-                    Create
-                  </Button>
-                </Box>
+              {/* Submissions */}
+              {["sub1", "sub2"].map(sub => {
+                const file = sub === "sub1" ? (sub1File || existingSub1File) : (sub2File || existingSub2File);
+                const setFile = sub === "sub1" ? setSub1File : setSub2File;
+                const existingSetFile = sub === "sub1" ? setExistingSub1File : setExistingSub2File;
+                const feedback = sub === "sub1" ? sub1Feedback : sub2Feedback;
+                const setFeedback = sub === "sub1" ? setSub1Feedback : setSub2Feedback;
+
+                return (
+                  <React.Fragment key={sub}>
+                    {/* Submission File */}
+                    <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+                      <Grid item xs={12} sm={3}><Typography>{`Submission ${sub === "sub1" ? "1" : "2"}:`}</Typography></Grid>
+                      <Grid item xs={12} sm={9}>
+                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                          {file instanceof File ? (
+                            <Chip label={file.name} onDelete={deleteSingleFile(setFile)} size="small" />
+                          ) : file ? (
+                            <Chip label={file.name} onDelete={() => existingSetFile(null)} size="small" />
+                          ) : (
+                            <Button component="label" variant="outlined" size="small" startIcon={<UploadFile />} sx={{ textTransform: "none" }}>
+                              Upload (.pdf, .doc, .md)
+                              <input hidden type="file" accept=".pdf,.doc,.docx,.md" onChange={handleSingleUpload(setFile)} />
+                            </Button>
+                          )}
+                        </Box>
+                      </Grid>
+                    </Grid>
+
+                    {/* Marking Table */}
+                    {rubric?.criteria?.length > 0 && (
+                      <Box sx={{ my: 2, overflowX: "auto" }}>
+                        <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                          {`Enter Marks for Submission ${sub === "sub1" ? "1" : "2"}`}
+                        </Typography>
+                        <Table sx={{ minWidth: 600 }}>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Criterion</TableCell>
+                              {rubric.levels.map(level => <TableCell key={level.id} align="center">{level.name}</TableCell>)}
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {rubric.criteria.map(c => (
+                              <TableRow key={c.id}>
+                                <TableCell>{c.title}</TableCell>
+                                {rubric.levels.map(level => {
+                                  const selectedLevel = submissionMarks[sub]?.[c.id];
+                                  const isSelected = selectedLevel === level.id;
+                                  return (
+                                    <TableCell key={level.id} align="center">
+                                      <Chip
+                                        label={level.name}
+                                        color={isSelected ? "primary" : "default"}
+                                        variant={isSelected ? "filled" : "outlined"}
+                                        onClick={() => handleLevelSelect(sub, c.id, level.id)}
+                                        clickable
+                                      />
+                                    </TableCell>
+                                  );
+                                })}
+                              </TableRow>
+                            ))}
+                            <TableRow>
+                              <TableCell colSpan={rubric.levels.length + 1} align="right">
+                                <Typography variant="subtitle1" fontWeight="bold">
+                                  {`Total Score: ${getSubmissionTotal(sub).achieved} / ${getSubmissionTotal(sub).max}`}
+                                </Typography>
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </Box>
+                    )}
+
+                    {/* Feedback */}
+                    <TextField fullWidth multiline minRows={3} label={`Submission ${sub === "sub1" ? "1" : "2"} Feedback (optional)`} value={feedback} onChange={e => setFeedback(e.target.value)} sx={{ ...textFieldSx, mb: 3 }} />
+                  </React.Fragment>
+                );
+              })}
+
+              {/* Footer */}
+              <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
+                <Button variant="outlined" onClick={handleCancel}>Cancel</Button>
+                <Button variant="contained" onClick={handleEdit}>Save</Button>
               </Box>
             </Box>
           </Paper>
         </Container>
+
+        {/* Snackbar */}
+        <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: "top", horizontal: "center" }}>
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>{snackbar.message}</Alert>
+        </Snackbar>
       </Box>
     </LocalizationProvider>
   );
