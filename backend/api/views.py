@@ -474,48 +474,86 @@ def edit_account_view(request, id):
             )
         
 
+
 def show_assignments_view(request, id):
-    if request.method == "GET":
-        sessionid = request.headers.get("X-Session-ID")
-        if not sessionid:
-            return JsonResponse(
-                {"successful": False, "message": "User is not logged in"},
-                status=401
-            )
-
-        # try:
-        #     # Decode session
-        #     session = Session.objects.get(session_key=sessionid)
-        #     uid = session.get_decoded().get("_auth_user_id")
-        #     user = User.objects.get(pk=uid)
-        # except (Session.DoesNotExist, User.DoesNotExist):
-        #     return JsonResponse(
-        #         {"successful": False, "message": "Invalid session"},
-        #         status=401
-        #     )
-
-        # ✅ Fetch all assignments
-        assignments = Assignment.objects.all().values("id", "name", "due_date")
-
-        # Convert datetime → string (ISO or formatted)
-        assignment_list = [
-            {
-                "id": a["id"],
-                "name": a["name"],
-                "dueDate": a["due_date"].strftime("%Y-%m-%d"),
-            }
-            for a in assignments
-        ]
-
+    if request.method != "GET":
         return JsonResponse(
-            {"successful": True, "assignments": assignment_list},
-            status=200
+            {"successful": False, "message": "Method not allowed"},
+            status=405
         )
 
+    # --- Check session ---
+    sessionid = request.headers.get("X-Session-ID")
+    if not sessionid:
+        return JsonResponse(
+            {"successful": False, "message": "User is not logged in"},
+            status=401
+        )
+
+    try:
+        session = Session.objects.get(session_key=sessionid)
+        uid = session.get_decoded().get("_auth_user_id")
+        user = User.objects.get(pk=uid)
+    except (Session.DoesNotExist, User.DoesNotExist):
+        return JsonResponse(
+            {"successful": False, "message": "Invalid session"},
+            status=401
+        )
+
+    # --- Filter assignments based on role ---
+    if user.role == "admin":
+        assignments = Assignment.objects.filter(administrator=user)
+    else:
+        marks = Mark.objects.filter(marker=user).select_related("submission__assignment")
+        assignment_ids = marks.values_list("submission__assignment__id", flat=True).distinct()
+        assignments = Assignment.objects.filter(id__in=assignment_ids)
+
+    assignment_list = []
+
+    for a in assignments:
+        # fetch all submissions for this assignment
+        submissions = Submission.objects.filter(assignment=a)
+
+        if user.role == "admin":
+            # Admin: complete if all marks for all submissions are finalized
+            complete = all(
+                all(mark.is_finalized for mark in Mark.objects.filter(submission=sub))
+                for sub in submissions
+            )
+        else:
+            # Marker: complete if all marks by this marker are finalized
+            # Only consider submissions that this marker has a mark for
+            complete = all(
+                mark.is_finalized
+                for sub in submissions
+                for mark in Mark.objects.filter(submission=sub, marker=user)
+            )
+
+        assignment_list.append(
+            {
+                "id": a.id,
+                "name": a.name,
+                "dueDate": a.due_date.strftime("%Y-%m-%d"),
+                "completed": complete,
+            }
+        )
+
+    user_info = {
+        "id": user.id,
+        "email": user.email,
+        "role": user.role,
+        "username": user.username,
+    }
+
     return JsonResponse(
-        {"successful": False, "message": "Method not allowed"},
-        status=405
+        {
+            "successful": True,
+            "user": user_info,
+            "assignments": assignment_list,
+        },
+        status=200
     )
+
 
 
 @csrf_exempt
@@ -748,6 +786,51 @@ def edit_assignment_view(request, id):
     return JsonResponse({"success": True, "message": "Assignment updated successfully", "rubric_changed": rubric_changed})
 
 
+@require_GET
+def marker_assignment_detail_view(request, assignment_id):
+    """
+    Return assignment details, including submissions and related marks.
+    """
+    assignment = get_object_or_404(Assignment, id=assignment_id)
+
+    submissions_data = []
+    submissions = Submission.objects.filter(assignment=assignment)
+
+    for submission in submissions:
+        # Get marks for this submission
+        marks = Mark.objects.filter(submission=submission).select_related("marker")
+        marks_data = [
+            {
+                "id": mark.id,
+                "marks": mark.marks,
+                "is_finalized": mark.is_finalized,
+                "marker": mark.marker.email
+            }
+            for mark in marks
+        ]
+
+        submissions_data.append({
+            "id": submission.id,
+            "name": submission.name,
+            "submission_file": submission.submission_file.url if submission.submission_file else None,
+            "comment": submission.comment,
+            "admin_marks": submission.admin_marks,
+            "marks": marks_data
+        })
+
+    data = {
+        "id": assignment.id,
+        "name": assignment.name,
+        "creation_date": assignment.creation_date,
+        "due_date": assignment.due_date,
+        "rubric": assignment.rubric.url if assignment.rubric else None,
+        "assignment_file": assignment.assignment_file.url if assignment.assignment_file else None,
+        "mark_criteria": assignment.mark_criteria,
+        "administrator": assignment.administrator.email if assignment.administrator else None,
+        "submissions": submissions_data
+    }
+
+    return JsonResponse(data, safe=False)
 
 
 # Download files

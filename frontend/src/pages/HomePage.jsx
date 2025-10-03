@@ -237,9 +237,14 @@ export default function HomePage() {
                       boxShadow: "0 6px 12px rgba(0,0,0,0.15)",
                     },
                   }}
-                  onClick={() =>
-                    navigate(`/${userId}/assignment/${a.id}`)
-                  }
+                  onClick={() => {
+                    if (user.role === "admin") {
+                      navigate(`/${userId}/assignment/${a.id}`);
+                    } else {
+                      // Marker goes to assignment marking page
+                      navigate(`/${userId}/marker/assignment/${a.id}`);
+                    }
+                  }}
                 >
                   <Box>
                     <Typography variant="h6">{a.name}</Typography>

@@ -13,11 +13,17 @@ import {
   DialogContentText,
   DialogTitle,
   Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 import Navbar from "../components/Navbar";
 import { DownloadIcon } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useParams, useNavigate } from "react-router-dom";
+import { parseDocxToRubric } from "../utils/rubricDocx"; // Adjust path if needed
 
 // PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
@@ -44,13 +50,7 @@ function CustomCircularProgress({ percent }) {
 
   return (
     <Box sx={{ position: "relative", display: "inline-flex" }}>
-      <CircularProgress
-        variant="determinate"
-        sx={{ color: "#E8DEF8" }}
-        size={80}
-        thickness={4}
-        value={100}
-      />
+      <CircularProgress variant="determinate" sx={{ color: "#E8DEF8" }} size={80} thickness={4} value={100} />
       <CircularProgress
         variant="determinate"
         disableShrink
@@ -182,23 +182,10 @@ function PDFViewer({ file }) {
   }, []);
 
   return (
-    <Box
-      sx={{
-        border: "1px solid #ccc",
-        borderRadius: 2,
-        overflowY: "auto",
-        maxHeight: 600,
-        p: 1,
-        mb: 1,
-      }}
-    >
+    <Box sx={{ border: "1px solid #ccc", borderRadius: 2, overflowY: "auto", maxHeight: 600, p: 1, mb: 1 }}>
       <Document file={file} onLoadSuccess={onDocumentLoadSuccess}>
         {Array.from(new Array(numPages), (el, index) => (
-          <Page
-            key={`page_${index + 1}`}
-            pageNumber={index + 1}
-            width={containerWidth}
-          />
+          <Page key={`page_${index + 1}`} pageNumber={index + 1} width={containerWidth} />
         ))}
       </Document>
     </Box>
@@ -216,6 +203,7 @@ export default function AssignmentPage() {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [rubric, setRubric] = useState(null);
 
   const navbarWidth = 200;
   const API_BASE = "http://localhost:8000/api";
@@ -228,7 +216,6 @@ export default function AssignmentPage() {
         if (!res.ok) throw new Error("Failed to fetch assignment");
         const data = await res.json();
 
-        // Add direct download URLs for frontend
         const assignmentData = {
           ...data.assignment,
           downloadUrl: `${API_BASE}/assignment/${assignmentId}/download/`,
@@ -241,6 +228,15 @@ export default function AssignmentPage() {
 
         setAssignment(assignmentData);
         setSubmissions(submissionsData);
+
+        // Fetch rubric docx and parse to JSON
+        if (assignmentData.rubricDownloadUrl) {
+          const resRubric = await fetch(assignmentData.rubricDownloadUrl);
+          if (!resRubric.ok) throw new Error("Failed to fetch rubric file");
+          const file = await resRubric.blob();
+          const parsedRubric = await parseDocxToRubric(file);
+          setRubric(parsedRubric);
+        }
       } catch (err) {
         console.error("Error:", err);
         alert("Failed to load assignment.");
@@ -251,9 +247,7 @@ export default function AssignmentPage() {
     fetchAssignment();
   }, [assignmentId]);
 
-  // ---------------------
-  // File download as blob
-  // ---------------------
+  // File download helper
   const downloadFile = async (fileUrl) => {
     try {
       const res = await fetch(fileUrl);
@@ -273,18 +267,34 @@ export default function AssignmentPage() {
     }
   };
 
-  const renderFileViewer = (file) => {
-    if (!file) return <Typography>No file uploaded</Typography>;
-    if (file.endsWith(".pdf")) return <PDFViewer file={file} />;
-    if (file.match(/\.(jpg|jpeg|png|gif)$/))
-      return (
-        <img
-          src={file}
-          alt="file preview"
-          style={{ maxWidth: "100%", maxHeight: 400, borderRadius: 4 }}
-        />
-      );
-    return <Typography>Preview not available</Typography>;
+  // Render rubric table
+  const renderRubricTable = () => {
+    if (!rubric) return <Typography>Loading rubric...</Typography>;
+
+    return (
+      <Table sx={{ border: "1px solid #ccc", mb: 2 }}>
+        <TableHead>
+          <TableRow>
+            <TableCell sx={{ fontWeight: "bold" }}>Criteria</TableCell>
+            {rubric.levels.map((level) => (
+              <TableCell key={level.id} sx={{ fontWeight: "bold" }}>
+                {level.name}
+              </TableCell>
+            ))}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {rubric.criteria.map((c) => (
+            <TableRow key={c.id}>
+              <TableCell>{c.title}</TableCell>
+              {c.cells.map((cell, idx) => (
+                <TableCell key={idx}>{cell.description}</TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
   };
 
   const handleDelete = async () => {
@@ -328,18 +338,19 @@ export default function AssignmentPage() {
             Assignment File:
           </Typography>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 2 }}>
-            {renderFileViewer(assignment.assignment_file)}
             <Button variant="outlined" onClick={() => downloadFile(assignment.downloadUrl)}>
               Download Assignment
             </Button>
           </Box>
 
-          {/* Rubric File */}
+          {/* Rubric Table */}
           <Typography variant="h5" sx={{ mt: 2, mb: 1 }}>
             Rubric:
           </Typography>
+          {renderRubricTable()}
+
+          {/* Rubric Download Button */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 2 }}>
-            {renderFileViewer(assignment.rubric)}
             <Button variant="outlined" onClick={() => downloadFile(assignment.rubricDownloadUrl)}>
               Download Rubric
             </Button>
@@ -352,11 +363,7 @@ export default function AssignmentPage() {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {submissions.length > 0 ? (
               submissions.map((submission, idx) => (
-                <SubmissionCard
-                  submission={{ index: idx + 1, ...submission }}
-                  key={submission.id}
-                  downloadFile={downloadFile}
-                />
+                <SubmissionCard submission={{ index: idx + 1, ...submission }} key={submission.id} downloadFile={downloadFile} />
               ))
             ) : (
               <Typography>No submissions yet</Typography>
@@ -368,8 +375,8 @@ export default function AssignmentPage() {
             <Button variant="contained" color="error" onClick={() => setOpen(true)}>
               Delete Assignment
             </Button>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               sx={{ background: "#D9D9D9", color: "black" }}
               onClick={() => navigate(`/${userId}/assignment/${assignmentId}/edit`)}
             >
