@@ -832,6 +832,36 @@ def marker_assignment_detail_view(request, assignment_id):
 
     return JsonResponse(data, safe=False)
 
+@require_GET
+def marks_by_submission_view(request, submission_id):
+    try:
+        # Ensure submission exists
+        submission = Submission.objects.get(pk=submission_id)
+    except Submission.DoesNotExist:
+        return JsonResponse(
+            {"successful": False, "message": "Submission not found"},
+            status=404
+        )
+
+    # Fetch all marks for this submission
+    marks_qs = Mark.objects.filter(submission=submission).select_related('marker')
+
+    marks_list = []
+    for mark in marks_qs:
+        marks_list.append({
+            "id": mark.id,
+            "marker": {
+                "id": mark.marker.id,
+                "email": mark.marker.email,
+                "username": mark.marker.username,
+            },
+            "marks": mark.marks,  # JSON field
+            "isFinalized": mark.is_finalized,
+        })
+
+    return JsonResponse({"successful": True, "submissionId": submission_id, "marks": marks_list}, status=200)
+
+
 
 # Download files
 

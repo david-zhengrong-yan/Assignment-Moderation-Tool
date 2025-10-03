@@ -15,6 +15,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import MarkerPage from "./pages/MarkerPage";
 import MarkingPage from "./pages/MarkingPage";
 import EditAssignmentPage from "./pages/EditAssignmentPage";
+import ViewSubmissionPage from "./pages/ViewSubmissionPage";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="/:userId/assignment/create" element={<CreateAssignmentPage />} />
         <Route path="/:userId/marker/assignment/:assignmentId" element={ <MarkerPage />} />
         <Route path="/:userId/submission/:submissionId" element={ <MarkingPage />} />
+        <Route path="/:userId/submission/:submissionId/details" element={ <ViewSubmissionPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
   );

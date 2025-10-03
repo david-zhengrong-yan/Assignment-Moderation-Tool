@@ -23,15 +23,15 @@ import Navbar from "../components/Navbar";
 import { DownloadIcon, EyeIcon } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useParams, useNavigate } from "react-router-dom";
-import { parseDocxToRubric } from "../utils/rubricDocx"; // Adjust path if needed
+import { parseDocxToRubric } from "../utils/rubricDocx";
 
 // PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
 // ---------------------
-// Animated Circular Progress
+// Circular Progress with raw number
 // ---------------------
-function CustomCircularProgress({ percent }) {
+function CustomCircularProgress({ percent, label }) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -77,8 +77,8 @@ function CustomCircularProgress({ percent }) {
           justifyContent: "center",
         }}
       >
-        <Typography variant="caption" component="div" sx={{ fontWeight: "bold" }}>
-          {`${Math.round(progress)}%`}
+        <Typography variant="caption" component="div" sx={{ fontWeight: "bold", fontSize: "1.1rem" }}>
+          {label}
         </Typography>
       </Box>
     </Box>
@@ -89,8 +89,12 @@ function CustomCircularProgress({ percent }) {
 // Submission Card
 // ---------------------
 function SubmissionCard({ submission, downloadFile, onViewDetails }) {
-  const finishedPercentage = (submission.markers / submission.totalMarkers) * 100;
-  const averagePercentage = (submission.averageMarkers / submission.totalMarkers) * 100;
+  const finishedPercent = submission.totalMarkers
+    ? (submission.markersFinished / submission.totalMarkers) * 100
+    : 0;
+  const averagePercent = submission.totalMarkers
+    ? (submission.averageScore / submission.totalMarkers) * 100
+    : 0;
 
   return (
     <Card
@@ -119,9 +123,9 @@ function SubmissionCard({ submission, downloadFile, onViewDetails }) {
             flexDirection: "column",
           }}
         >
-          <CustomCircularProgress percent={finishedPercentage} />
+          <CustomCircularProgress percent={finishedPercent} label={submission.markersFinished} />
           <Typography sx={{ mt: 1, fontSize: "0.85rem", textAlign: "center" }}>
-            {submission.markers}/{submission.totalMarkers} markers finished
+            {submission.totalMarkers} markers total
           </Typography>
         </Card>
 
@@ -137,10 +141,8 @@ function SubmissionCard({ submission, downloadFile, onViewDetails }) {
             flexDirection: "column",
           }}
         >
-          <CustomCircularProgress percent={averagePercentage} />
-          <Typography sx={{ mt: 1, fontSize: "0.85rem", textAlign: "center" }}>
-            Current Average
-          </Typography>
+          <CustomCircularProgress percent={averagePercent} label={submission.averageScore.toFixed(1)} />
+          <Typography sx={{ mt: 1, fontSize: "0.85rem", textAlign: "center" }}>Current Average</Typography>
         </Card>
 
         {/* Download Submission */}
@@ -177,17 +179,13 @@ function SubmissionCard({ submission, downloadFile, onViewDetails }) {
             }}
           >
             <EyeIcon size={60} />
-            <Typography sx={{ mt: 1, fontSize: "0.85rem", textAlign: "center" }}>
-              View Details
-            </Typography>
+            <Typography sx={{ mt: 1, fontSize: "0.85rem", textAlign: "center" }}>View Details</Typography>
           </CardActionArea>
         </Card>
       </Box>
     </Card>
   );
 }
-
-
 
 // ---------------------
 // PDF Viewer
@@ -211,7 +209,7 @@ function PDFViewer({ file }) {
   return (
     <Box sx={{ border: "1px solid #ccc", borderRadius: 2, overflowY: "auto", maxHeight: 600, p: 1, mb: 1 }}>
       <Document file={file} onLoadSuccess={onDocumentLoadSuccess}>
-        {Array.from(new Array(numPages), (el, index) => (
+        {Array.from(new Array(numPages), (_, index) => (
           <Page key={`page_${index + 1}`} pageNumber={index + 1} width={containerWidth} />
         ))}
       </Document>
@@ -220,7 +218,7 @@ function PDFViewer({ file }) {
 }
 
 // ---------------------
-// Main Page
+// Main Assignment Page
 // ---------------------
 export default function AssignmentPage() {
   const { userId, assignmentId } = useParams();
@@ -235,7 +233,6 @@ export default function AssignmentPage() {
   const navbarWidth = 200;
   const API_BASE = "http://localhost:8000/api";
 
-  // Fetch assignment info
   useEffect(() => {
     async function fetchAssignment() {
       try {
@@ -248,15 +245,42 @@ export default function AssignmentPage() {
           downloadUrl: `${API_BASE}/assignment/${assignmentId}/download/`,
           rubricDownloadUrl: `${API_BASE}/assignment/${assignmentId}/rubric/download/`,
         };
-        const submissionsData = (data.submissions || []).map((sub) => ({
+
+        let submissionsData = (data.submissions || []).map((sub, idx) => ({
           ...sub,
+          index: idx + 1,
           downloadUrl: `${API_BASE}/submission/${sub.id}/download/`,
+          markersFinished: 0,
+          averageScore: 0,
+          totalMarkers: sub.totalMarkers || 0,
         }));
+
+        // Fetch marks for each submission
+        for (let i = 0; i < submissionsData.length; i++) {
+          const sub = submissionsData[i];
+          try {
+            const resMarks = await fetch(`${API_BASE}/submission/${sub.id}/marks`);
+            if (!resMarks.ok) throw new Error("Failed to fetch marks");
+            const marksData = (await resMarks.json()).marks || [];
+            const finalizedMarks = marksData.filter((m) => m.isFinalized);
+            const markersFinished = finalizedMarks.length;
+            const averageScore =
+              finalizedMarks.length > 0
+                ? finalizedMarks.reduce((sum, m) => {
+                    const total = Object.values(m.marks).reduce((a, b) => a + b, 0);
+                    return sum + total;
+                  }, 0) / finalizedMarks.length
+                : 0;
+            submissionsData[i] = { ...sub, markersFinished, averageScore };
+          } catch (err) {
+            console.error("Failed to fetch marks for submission:", sub.id, err);
+          }
+        }
 
         setAssignment(assignmentData);
         setSubmissions(submissionsData);
 
-        // Fetch rubric docx and parse to JSON
+        // Fetch rubric
         if (assignmentData.rubricDownloadUrl) {
           const resRubric = await fetch(assignmentData.rubricDownloadUrl);
           if (!resRubric.ok) throw new Error("Failed to fetch rubric file");
@@ -271,10 +295,10 @@ export default function AssignmentPage() {
         setLoading(false);
       }
     }
+
     fetchAssignment();
   }, [assignmentId]);
 
-  // File download helper
   const downloadFile = async (fileUrl) => {
     try {
       const res = await fetch(fileUrl);
@@ -294,7 +318,6 @@ export default function AssignmentPage() {
     }
   };
 
-  // Render rubric table
   const renderRubricTable = () => {
     if (!rubric) return <Typography>Loading rubric...</Typography>;
 
@@ -326,9 +349,7 @@ export default function AssignmentPage() {
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`${API_BASE}/assignment/${assignmentId}/delete/`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`${API_BASE}/assignment/${assignmentId}/delete/`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete assignment");
       navigate(`/${userId}/home`, { replace: true });
     } catch (err) {
@@ -345,16 +366,7 @@ export default function AssignmentPage() {
       <CssBaseline />
       <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f5f5f5" }}>
         <Navbar />
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            ml: `${navbarWidth}px`,
-            p: 4,
-            bgcolor: "#ffffff",
-            boxSizing: "border-box",
-          }}
-        >
+        <Box component="main" sx={{ flexGrow: 1, ml: `${navbarWidth}px`, p: 4, bgcolor: "#ffffff", boxSizing: "border-box" }}>
           <Typography variant="h4" sx={{ mb: 1 }}>
             {assignment.name}
           </Typography>
@@ -375,8 +387,6 @@ export default function AssignmentPage() {
             Rubric:
           </Typography>
           {renderRubricTable()}
-
-          {/* Rubric Download Button */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 2 }}>
             <Button variant="outlined" onClick={() => downloadFile(assignment.rubricDownloadUrl)}>
               Download Rubric
@@ -389,8 +399,13 @@ export default function AssignmentPage() {
           </Typography>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {submissions.length > 0 ? (
-              submissions.map((submission, idx) => (
-                <SubmissionCard submission={{ index: idx + 1, ...submission }} key={submission.id} downloadFile={downloadFile} />
+              submissions.map((submission) => (
+                <SubmissionCard
+                  key={submission.id}
+                  submission={submission}
+                  downloadFile={downloadFile}
+                  onViewDetails={(sub) => navigate(`/${userId}/submission/${sub.id}/details`)}
+                />
               ))
             ) : (
               <Typography>No submissions yet</Typography>
@@ -416,8 +431,7 @@ export default function AssignmentPage() {
             <DialogTitle>Delete Assignment?</DialogTitle>
             <DialogContent>
               <DialogContentText>
-                Are you sure you want to delete this assignment? All submissions and marks will
-                be deleted. This cannot be undone.
+                Are you sure you want to delete this assignment? All submissions and marks will be deleted. This cannot be undone.
               </DialogContentText>
             </DialogContent>
             <DialogActions>
