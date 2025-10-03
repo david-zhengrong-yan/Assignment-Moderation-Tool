@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@mui/material";
 import Navbar from "../components/Navbar";
-import { DownloadIcon } from "lucide-react";
+import { DownloadIcon, EyeIcon } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useParams, useNavigate } from "react-router-dom";
 import { parseDocxToRubric } from "../utils/rubricDocx"; // Adjust path if needed
@@ -88,7 +88,7 @@ function CustomCircularProgress({ percent }) {
 // ---------------------
 // Submission Card
 // ---------------------
-function SubmissionCard({ submission, downloadFile }) {
+function SubmissionCard({ submission, downloadFile, onViewDetails }) {
   const finishedPercentage = (submission.markers / submission.totalMarkers) * 100;
   const averagePercentage = (submission.averageMarkers / submission.totalMarkers) * 100;
 
@@ -107,6 +107,7 @@ function SubmissionCard({ submission, downloadFile }) {
         Submission {submission.index}
       </Typography>
       <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+        {/* Markers Finished */}
         <Card
           sx={{
             p: 2,
@@ -123,6 +124,8 @@ function SubmissionCard({ submission, downloadFile }) {
             {submission.markers}/{submission.totalMarkers} markers finished
           </Typography>
         </Card>
+
+        {/* Average Score */}
         <Card
           sx={{
             p: 2,
@@ -139,6 +142,8 @@ function SubmissionCard({ submission, downloadFile }) {
             Current Average
           </Typography>
         </Card>
+
+        {/* Download Submission */}
         <Card sx={{ p: 0, width: 180, height: 180 }}>
           <CardActionArea
             onClick={() => downloadFile(submission.downloadUrl)}
@@ -157,10 +162,32 @@ function SubmissionCard({ submission, downloadFile }) {
             </Typography>
           </CardActionArea>
         </Card>
+
+        {/* View Details */}
+        <Card sx={{ p: 0, width: 180, height: 180 }}>
+          <CardActionArea
+            onClick={() => onViewDetails(submission)}
+            sx={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <EyeIcon size={60} />
+            <Typography sx={{ mt: 1, fontSize: "0.85rem", textAlign: "center" }}>
+              View Details
+            </Typography>
+          </CardActionArea>
+        </Card>
       </Box>
     </Card>
   );
 }
+
+
 
 // ---------------------
 // PDF Viewer
