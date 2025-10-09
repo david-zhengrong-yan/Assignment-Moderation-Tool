@@ -2,6 +2,7 @@ import json
 import mimetypes
 import os
 from django.shortcuts import render
+from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse, JsonResponse, Http404, FileResponse
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.sessions.models import Session
@@ -860,6 +861,129 @@ def marks_by_submission_view(request, submission_id):
         })
 
     return JsonResponse({"successful": True, "submissionId": submission_id, "marks": marks_list}, status=200)
+
+
+
+
+
+
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def submission_mark_view(request, user_id, assignment_id, submission_id):
+    """
+    GET  -> Retrieve the mark information and rubric (mark_criteria)
+    POST -> Save or update the marker's marks
+    """
+
+    # -----------------------
+    # 1. Authenticate user
+    # -----------------------
+    sessionid = request.headers.get("X-Session-ID")
+    if not sessionid:
+        return JsonResponse(
+            {"successful": False, "message": "User is not logged in"},
+            status=401
+        )
+
+    try:
+        session = Session.objects.get(session_key=sessionid)
+        uid = session.get_decoded().get("_auth_user_id")
+        authenticated_user = User.objects.get(id=uid)
+    except (Session.DoesNotExist, User.DoesNotExist):
+        return JsonResponse(
+            {"successful": False, "message": "Invalid or expired session"},
+            status=401
+        )
+
+    # -----------------------
+    # 2. Authorization check
+    # -----------------------
+    if authenticated_user.role != "marker":
+        return JsonResponse(
+            {"successful": False, "message": "Only markers can access this endpoint"},
+            status=403
+        )
+
+    # -----------------------
+    # 3. Validate resources
+    # -----------------------
+    assignment = get_object_or_404(Assignment, id=assignment_id)
+    submission = get_object_or_404(Submission, id=submission_id, assignment=assignment)
+
+    # -----------------------
+    # 4. GET request — retrieve data
+    # -----------------------
+    if request.method == "GET":
+        mark, _ = Mark.objects.get_or_create(
+            marker=authenticated_user,
+            submission=submission,
+            defaults={"marks": {}, "is_finalized": False}
+        )
+
+        assignment_data = {
+            "id": assignment.id,
+            "name": assignment.name,
+            "creation_date": assignment.creation_date,
+            "due_date": assignment.due_date,
+            "administrator": assignment.administrator.email if assignment.administrator else None,
+            "rubric_file": assignment.rubric.url if assignment.rubric else None,
+            "assignment_file": assignment.assignment_file.url if assignment.assignment_file else None,
+            "mark_criteria": assignment.mark_criteria,  # ✅ the rubric JSON
+        }
+
+        data = {
+            "successful": True,
+            "mark": {
+                "id": mark.id,
+                "marks": mark.marks,  # e.g. {"1": {"level_id": 2, "score": 8}}
+                "is_finalized": mark.is_finalized,
+            },
+            "submission": {
+                "id": submission.id,
+                "name": submission.name,
+                "file_url": submission.submission_file.url if submission.submission_file else None,
+                "comment": submission.comment,
+            },
+            "assignment": assignment_data,
+            "marker": {
+                "id": authenticated_user.id,
+                "email": authenticated_user.email,
+                "role": authenticated_user.role,
+            },
+        }
+
+        return JsonResponse(data, status=200)
+
+    # -----------------------
+    # 5. POST request — save/update marks
+    # -----------------------
+    elif request.method == "POST":
+        try:
+            body = json.loads(request.body.decode("utf-8"))
+            new_marks = body.get("marks", {})
+            is_finalized = body.get("is_finalized", False)
+        except json.JSONDecodeError:
+            return JsonResponse(
+                {"successful": False, "message": "Invalid JSON payload"},
+                status=400
+            )
+
+        mark, _ = Mark.objects.get_or_create(
+            marker=authenticated_user,
+            submission=submission,
+            defaults={"marks": {}, "is_finalized": False}
+        )
+
+        mark.marks = new_marks
+        mark.is_finalized = is_finalized
+        mark.save()
+
+        return JsonResponse(
+            {"successful": True, "message": "Mark saved successfully"},
+            status=200
+        )
+
 
 
 

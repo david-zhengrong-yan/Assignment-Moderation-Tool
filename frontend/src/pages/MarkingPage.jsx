@@ -1,40 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
-  Card,
-  CardActionArea,
-  CircularProgress,
   CssBaseline,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
+  Typography,
   Pagination,
   PaginationItem,
-  Typography,
+  CircularProgress,
 } from "@mui/material";
 import Navbar from "../components/Navbar";
-import { DownloadIcon } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
+import { useParams } from "react-router";
 
-// Set worker for react-pdf
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+// ---------------------------
+// PDF.js Worker setup for Vite
+// ---------------------------
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.js",
+  import.meta.url
+).toString();
 
-// Full PDF Viewer Component
+// ---------------------------
+// PDF Viewer Component
+// ---------------------------
 function PDFViewer({ file }) {
   const [numPages, setNumPages] = useState(null);
   const [containerWidth, setContainerWidth] = useState(600);
 
-  const onDocumentLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages);
-  };
+  const onDocumentLoadSuccess = ({ numPages }) => setNumPages(numPages);
 
-  // Responsive width
-  React.useEffect(() => {
+  useEffect(() => {
     const updateWidth = () => {
-      const width = Math.min(window.innerWidth - 250, 800); // navbar + padding accounted
+      const width = Math.min(window.innerWidth - 250, 800);
       setContainerWidth(width);
     };
     updateWidth();
@@ -54,7 +51,7 @@ function PDFViewer({ file }) {
       }}
     >
       <Document file={file} onLoadSuccess={onDocumentLoadSuccess}>
-        {Array.from(new Array(numPages), (el, index) => (
+        {Array.from(new Array(numPages), (_, index) => (
           <Page
             key={`page_${index + 1}`}
             pageNumber={index + 1}
@@ -66,77 +63,162 @@ function PDFViewer({ file }) {
   );
 }
 
-const CriteriaCard = ({ criteria }) => {
-  const [page, setPage] = React.useState(1);
-  const handleChange = (event, value) => {
-    setPage(value);
+// ---------------------------
+// Criteria Card Component
+// ---------------------------
+const CriteriaCard = ({ criteria, mark, setMark }) => {
+  const [page, setPage] = useState(null); // null = no grade selected
+
+  const selectedIndex = mark.marks?.[criteria.id]?.level_index ?? null;
+  const selectedScore =
+    selectedIndex !== null
+      ? criteria.cells[selectedIndex]?.max || 0
+      : 0;
+
+  const handleLevelSelect = (levelIndex) => {
+    setMark((prev) => ({
+      ...prev,
+      marks: {
+        ...prev.marks,
+        [criteria.id]: {
+          ...prev.marks[criteria.id],
+          level_index: levelIndex,
+          score: criteria.cells[levelIndex]?.max || 0,
+        },
+      },
+    }));
+    setPage(levelIndex + 1);
   };
+
   return (
     <Box sx={{ mb: 4, mt: 4 }}>
       <Typography variant="h6" sx={{ mb: 2 }}>
         {criteria.index}. {criteria.title}
       </Typography>
-      <Pagination page={page} onChange={handleChange} shape="rounded" variant="outlined" sx={{ width: '100%' }} count={criteria.items.length} color="primary" renderItem={(item) => {
-        item.page = '';
-        if (item.selected) {
-          item.page = "√";
-        }
-        return <PaginationItem sx={{ flex: 1 }} {...item} />;
-      }} />
-      <div style={{display: 'flex'}}>
-        <Typography variant="h6" sx={{ flex: 1, mb: 2, color: '#66CCFF' }}>
-          {criteria.items[page - 1].level}
-        </Typography>
-        <Typography variant="h6" sx={{ mb: 2, color: '#66CCFF' }}>
-          {criteria.items[page - 1].mark} / {criteria.totalMark}
-        </Typography>
-      </div>
 
-      <p>
-        {criteria.items[page - 1].description}
-      </p>
+      <Pagination
+        page={page || 0}
+        shape="rounded"
+        variant="outlined"
+        sx={{ width: "100%" }}
+        count={criteria.cells.length}
+        color="primary"
+        renderItem={(item) => {
+          const isSelected = selectedIndex === item.page - 1;
+          const display = isSelected ? "✓" : "";
+          return (
+            <PaginationItem
+              {...item}
+              sx={{
+                flex: 1,
+                bgcolor: isSelected ? "#66CCFF" : undefined,
+                color: isSelected ? "#fff" : undefined,
+              }}
+              page={display}
+              onClick={() => handleLevelSelect(item.page - 1)}
+            />
+          );
+        }}
+      />
+
+      {selectedIndex !== null && (
+        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+          <Typography variant="body1" sx={{ flex: 1, color: "#66CCFF" }}>
+            {criteria.cells[selectedIndex].description}
+          </Typography>
+          <Typography variant="body1" sx={{ color: "#66CCFF" }}>
+            {selectedScore} / {criteria.maxScore || criteria.totalMark || 0}
+          </Typography>
+        </Box>
+      )}
     </Box>
-  )
-}
+  );
+};
 
+// ---------------------------
+// Main Marking Page
+// ---------------------------
 export default function MarkingPage() {
-  const [criterias, setCriterias] = useState([
-    {
-      index: 1, title: 'Introduction: Applies...',
-      totalMark: 15,
-      items: [{ level: "High Distinction", description: "Text Here", mark: 15 },
-      { level: "2", description: "Text Here", mark: 11 },
-      { level: "3", description: "Text Here", mark: 8 },
-      { level: "4", description: "Text Here", mark: 4 },
-      { level: "5", description: "Text Here", mark: 2 }
-      ]
-    },
-    {
-      index: 2, title: 'Introduction: Locates....',
-      totalMark: 10,
-      items: [{ level: "High Distinction", description: "Text Here", mark: 10 },
-      { level: "2", description: "Text Here", mark: 8 },
-      { level: "3", description: "Text Here", mark: 4 },
-      { level: "4", description: "Text Here", mark: 6 },
-      { level: "5", description: "Text Here", mark: 2 }
-      ]
-    },
-  ]);
-
+  const { userId, assignmentId, submissionId } = useParams();
+  const [loading, setLoading] = useState(true);
+  const [assignment, setAssignment] = useState(null);
+  const [submission, setSubmission] = useState(null);
+  const [criteria, setCriteria] = useState([]);
+  const [mark, setMark] = useState({ marks: {}, is_finalized: false, id: null });
   const navbarWidth = 200;
 
+  // Fetch data from backend
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:8000/api/${userId}/assignment/${assignmentId}/submission/${submissionId}/mark`,
+          {
+            headers: { "X-Session-ID": localStorage.getItem("sessionid") },
+          }
+        );
+        const data = await res.json();
+        if (!data.successful) throw new Error(data.message);
 
-  const assignmentFile = "sample.pdf";
+        setAssignment(data.assignment);
+        setSubmission(data.submission);
 
-  const renderFileViewer = (file) => {
-    if (file.endsWith(".pdf")) {
-      return <PDFViewer file={file} />;
-    } else if (file.match(/\.(jpg|jpeg|png|gif)$/)) {
-      return <img src={file} alt="file preview" style={{ maxWidth: "100%", maxHeight: 400, borderRadius: 4 }} />;
-    } else {
-      return <Typography>Preview not available</Typography>;
+        setMark({
+          marks: data.mark.marks || {},
+          is_finalized: data.mark.is_finalized || false,
+          id: data.mark.id || null,
+        });
+
+        const crits = (data.assignment.mark_criteria.criteria || []).map((c, idx) => ({
+          ...c,
+          index: idx + 1,
+        }));
+        setCriteria(crits);
+      } catch (err) {
+        console.error(err);
+        alert("Failed to load marking data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [userId, assignmentId, submissionId]);
+
+  // Save / Finalize handler
+  const handleSave = async (finalize = false) => {
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/${userId}/assignment/${assignmentId}/submission/${submissionId}/mark`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Session-ID": localStorage.getItem("sessionid"),
+          },
+          body: JSON.stringify({ marks: mark.marks, is_finalized: finalize }),
+        }
+      );
+      const data = await res.json();
+      if (!data.successful) throw new Error(data.message);
+      alert(finalize ? "Mark finalized!" : "Draft saved!");
+      setMark((prev) => ({ ...prev, is_finalized: finalize }));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save mark.");
     }
   };
+
+  if (loading) return <CircularProgress />;
+
+  const totalScore = criteria.reduce(
+    (sum, c) => sum + (mark.marks?.[c.id]?.score || 0),
+    0
+  );
+  const maxScore = criteria.reduce(
+    (sum, c) => sum + (c.maxScore || c.totalMark || 0),
+    0
+  );
 
   return (
     <>
@@ -153,34 +235,64 @@ export default function MarkingPage() {
             boxSizing: "border-box",
           }}
         >
-          <Typography variant="h4" sx={{ mb: 1 }}>
-            Submission Name
+          <Typography variant="h4" sx={{ mb: 2 }}>
+            {submission.name}
           </Typography>
 
-          <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-            <div style={{ width: '50%' }}>
-              {renderFileViewer(assignmentFile)}
-            </div>
-            <div style={{ width: '50%' }}>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            {/* Left PDF */}
+            <Box sx={{ width: "50%" }}>
+              {submission.file_url ? (
+                <PDFViewer
+                  file={submission.file_url}
+                />
+              ) : (
+                <Typography>No submission file uploaded</Typography>
+              )}
+            </Box>
+
+            {/* Right Criteria */}
+            <Box sx={{ width: "50%", overflowY: "auto", maxHeight: "80vh" }}>
               <Typography variant="h5" sx={{ mb: 2 }}>
                 Criteria
               </Typography>
-              {
-                criterias.map(criteria => {
-                  return (
-                    <CriteriaCard criteria={criteria} key={criteria.index} />
-                  )
-                })
-              }
+
+              {criteria.map((c) => (
+                <CriteriaCard key={c.id} criteria={c} mark={mark} setMark={setMark} />
+              ))}
+
+              <Box
+                sx={{
+                  mt: 3,
+                  p: 2,
+                  borderTop: "1px solid #ccc",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <Typography variant="h6" sx={{ color: "#66CCFF" }}>
+                  Total Score: {totalScore} / {maxScore}
+                </Typography>
+              </Box>
+
               <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
-                <Button variant="contained">
-                  Go Back
+                <Button
+                  variant="contained"
+                  onClick={() => handleSave(false)}
+                  disabled={mark.is_finalized}
+                >
+                  Save Draft
                 </Button>
-                <Button variant="contained">
-                  Submit
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={() => handleSave(true)}
+                  disabled={mark.is_finalized}
+                >
+                  Finalize
                 </Button>
               </Box>
-            </div>
+            </Box>
           </Box>
         </Box>
       </Box>

@@ -30,8 +30,8 @@ function App() {
         <Route path="/:userId/assignment/:assignmentId/edit" element={<EditAssignmentPage />} />
         <Route path="/:userId/assignment/create" element={<CreateAssignmentPage />} />
         <Route path="/:userId/marker/assignment/:assignmentId" element={ <MarkerPage />} />
-        <Route path="/:userId/submission/:submissionId" element={ <MarkingPage />} />
-        <Route path="/:userId/submission/:submissionId/details" element={ <ViewSubmissionPage />} />
+        <Route path="/:userId/assignment/:assignmentId/submission/:submissionId/mark" element={ <MarkingPage />} />
+        <Route path="/:userId/assignment/:assignmentId/submission/:submissionId/marks" element={ <ViewSubmissionPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
   );

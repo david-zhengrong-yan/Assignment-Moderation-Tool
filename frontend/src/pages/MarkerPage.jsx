@@ -195,7 +195,7 @@ export default function MarkerPage() {
                   <Button
                     variant="outlined"
                     sx={{ ml: 1 }}
-                    onClick={() => navigate(`/${userId}/submission/${submission.id}`)}
+                    onClick={() => navigate(`/${userId}/assignment/${assignmentId}/submission/${submission.id}/mark`)}
                   >
                     Mark
                   </Button>
