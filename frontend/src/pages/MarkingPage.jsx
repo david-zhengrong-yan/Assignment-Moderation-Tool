@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
@@ -7,18 +7,15 @@ import {
   Pagination,
   PaginationItem,
   CircularProgress,
+  Snackbar,
+  Alert,
 } from "@mui/material";
+import { useParams, useNavigate } from "react-router";
 import Navbar from "../components/Navbar";
 import { Document, Page, pdfjs } from "react-pdf";
-import { useParams } from "react-router";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
 
-// ---------------------------
-// PDF.js Worker setup for Vite
-// ---------------------------
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.js",
-  import.meta.url
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 // ---------------------------
 // PDF Viewer Component
@@ -30,33 +27,19 @@ function PDFViewer({ file }) {
   const onDocumentLoadSuccess = ({ numPages }) => setNumPages(numPages);
 
   useEffect(() => {
-    const updateWidth = () => {
-      const width = Math.min(window.innerWidth - 250, 800);
-      setContainerWidth(width);
-    };
+    const updateWidth = () => setContainerWidth(Math.min(window.innerWidth / 2 - 100, 800));
     updateWidth();
     window.addEventListener("resize", updateWidth);
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
+  if (!file) return <Typography>No submission file uploaded</Typography>;
+
   return (
-    <Box
-      sx={{
-        border: "1px solid #ccc",
-        borderRadius: 2,
-        overflowY: "auto",
-        maxHeight: 600,
-        p: 1,
-        mb: 1,
-      }}
-    >
+    <Box sx={{ border: "1px solid #ccc", borderRadius: 2, overflowY: "auto", maxHeight: 600, p: 1, mb: 1 }}>
       <Document file={file} onLoadSuccess={onDocumentLoadSuccess}>
         {Array.from(new Array(numPages), (_, index) => (
-          <Page
-            key={`page_${index + 1}`}
-            pageNumber={index + 1}
-            width={containerWidth}
-          />
+          <Page key={`page_${index + 1}`} pageNumber={index + 1} width={containerWidth} />
         ))}
       </Document>
     </Box>
@@ -66,33 +49,40 @@ function PDFViewer({ file }) {
 // ---------------------------
 // Criteria Card Component
 // ---------------------------
-const CriteriaCard = ({ criteria, mark, setMark }) => {
-  const [page, setPage] = useState(null); // null = no grade selected
-
+const CriteriaCard = ({ criteria, mark, setMark, autoSave, highlightError }) => {
+  const [page, setPage] = useState(null);
   const selectedIndex = mark.marks?.[criteria.id]?.level_index ?? null;
-  const selectedScore =
-    selectedIndex !== null
-      ? criteria.cells[selectedIndex]?.max || 0
-      : 0;
 
   const handleLevelSelect = (levelIndex) => {
-    setMark((prev) => ({
-      ...prev,
-      marks: {
+    setMark((prev) => {
+      const updatedMarks = {
         ...prev.marks,
         [criteria.id]: {
           ...prev.marks[criteria.id],
           level_index: levelIndex,
           score: criteria.cells[levelIndex]?.max || 0,
         },
-      },
-    }));
+      };
+      if (autoSave) autoSave(updatedMarks);
+      return { ...prev, marks: updatedMarks };
+    });
     setPage(levelIndex + 1);
   };
 
   return (
-    <Box sx={{ mb: 4, mt: 4 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>
+    <Box
+      sx={{
+        mb: 4,
+        mt: 4,
+        border: highlightError && selectedIndex === null ? "1px solid red" : "none",
+        borderRadius: 1,
+        p: highlightError && selectedIndex === null ? 1 : 0,
+      }}
+    >
+      <Typography
+        variant="h6"
+        sx={{ mb: 2, color: highlightError && selectedIndex === null ? "red" : "inherit" }}
+      >
         {criteria.index}. {criteria.title}
       </Typography>
 
@@ -109,11 +99,7 @@ const CriteriaCard = ({ criteria, mark, setMark }) => {
           return (
             <PaginationItem
               {...item}
-              sx={{
-                flex: 1,
-                bgcolor: isSelected ? "#66CCFF" : undefined,
-                color: isSelected ? "#fff" : undefined,
-              }}
+              sx={{ flex: 1, bgcolor: isSelected ? "#66CCFF" : undefined, color: isSelected ? "#fff" : undefined }}
               page={display}
               onClick={() => handleLevelSelect(item.page - 1)}
             />
@@ -127,7 +113,7 @@ const CriteriaCard = ({ criteria, mark, setMark }) => {
             {criteria.cells[selectedIndex].description}
           </Typography>
           <Typography variant="body1" sx={{ color: "#66CCFF" }}>
-            {selectedScore} / {criteria.maxScore || criteria.totalMark || 0}
+            {criteria.cells[selectedIndex].max} / {criteria.maxScore || criteria.totalMark || 0}
           </Typography>
         </Box>
       )}
@@ -140,22 +126,29 @@ const CriteriaCard = ({ criteria, mark, setMark }) => {
 // ---------------------------
 export default function MarkingPage() {
   const { userId, assignmentId, submissionId } = useParams();
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
   const [assignment, setAssignment] = useState(null);
   const [submission, setSubmission] = useState(null);
   const [criteria, setCriteria] = useState([]);
   const [mark, setMark] = useState({ marks: {}, is_finalized: false, id: null });
-  const navbarWidth = 200;
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [finalizeError, setFinalizeError] = useState(false);
 
-  // Fetch data from backend
+  const autoSaveTimer = useRef(null);
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === "clickaway") return;
+    setSnackbarOpen(false);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await fetch(
           `http://localhost:8000/api/${userId}/assignment/${assignmentId}/submission/${submissionId}/mark`,
-          {
-            headers: { "X-Session-ID": localStorage.getItem("sessionid") },
-          }
+          { headers: { "X-Session-ID": localStorage.getItem("sessionid") } }
         );
         const data = await res.json();
         if (!data.successful) throw new Error(data.message);
@@ -181,12 +174,49 @@ export default function MarkingPage() {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [userId, assignmentId, submissionId]);
 
-  // Save / Finalize handler
-  const handleSave = async (finalize = false) => {
+  // ---------------------------
+  // Auto-save draft
+  // ---------------------------
+  const autoSaveDraft = (updatedMarks) => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+
+    autoSaveTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:8000/api/${userId}/assignment/${assignmentId}/submission/${submissionId}/mark`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Session-ID": localStorage.getItem("sessionid"),
+            },
+            body: JSON.stringify({ marks: updatedMarks, is_finalized: false }),
+          }
+        );
+        const data = await res.json();
+        if (!data.successful) throw new Error(data.message);
+
+        setSnackbarOpen(true);
+        console.log("Draft auto-saved");
+      } catch (err) {
+        console.error("Auto-save failed:", err);
+      }
+    }, 500);
+  };
+
+  // ---------------------------
+  // Finalize with validation
+  // ---------------------------
+  const handleFinalize = async () => {
+    const unmarked = criteria.filter((c) => mark.marks?.[c.id]?.level_index === undefined);
+    if (unmarked.length > 0) {
+      setFinalizeError(true);
+      return;
+    }
+
     try {
       const res = await fetch(
         `http://localhost:8000/api/${userId}/assignment/${assignmentId}/submission/${submissionId}/mark`,
@@ -196,97 +226,85 @@ export default function MarkingPage() {
             "Content-Type": "application/json",
             "X-Session-ID": localStorage.getItem("sessionid"),
           },
-          body: JSON.stringify({ marks: mark.marks, is_finalized: finalize }),
+          body: JSON.stringify({ marks: mark.marks, is_finalized: true }),
         }
       );
       const data = await res.json();
       if (!data.successful) throw new Error(data.message);
-      alert(finalize ? "Mark finalized!" : "Draft saved!");
-      setMark((prev) => ({ ...prev, is_finalized: finalize }));
+
+      setMark((prev) => ({ ...prev, is_finalized: true }));
+      setFinalizeError(false);
+      setSnackbarOpen(true);
+      navigate(`/${userId}/marker/assignment/${assignmentId}`);
     } catch (err) {
       console.error(err);
-      alert("Failed to save mark.");
+      setFinalizeError(true);
     }
   };
 
   if (loading) return <CircularProgress />;
 
-  const totalScore = criteria.reduce(
-    (sum, c) => sum + (mark.marks?.[c.id]?.score || 0),
-    0
-  );
-  const maxScore = criteria.reduce(
-    (sum, c) => sum + (c.maxScore || c.totalMark || 0),
-    0
-  );
+  const totalScore = criteria.reduce((sum, c) => sum + (mark.marks?.[c.id]?.score || 0), 0);
+  const maxScore = criteria.reduce((sum, c) => sum + (c.maxScore || c.totalMark || 0), 0);
 
   return (
     <>
       <CssBaseline />
       <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f5f5f5" }}>
-        <Navbar />
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            ml: `${navbarWidth}px`,
-            p: 4,
-            bgcolor: "#ffffff",
-            boxSizing: "border-box",
-          }}
-        >
-          <Typography variant="h4" sx={{ mb: 2 }}>
-            {submission.name}
-          </Typography>
+        {/* Navbar */}
+        <Box sx={{ width: 200, flexShrink: 0 }}>
+          <Navbar />
+        </Box>
 
-          <Box sx={{ display: "flex", gap: 2 }}>
+        {/* Main content */}
+        <Box component="main" sx={{ flexGrow: 1, p: 4, bgcolor: "#fff", boxSizing: "border-box", minWidth: 0 }}>
+          <Typography variant="h4" sx={{ mb: 2 }}>{submission.name}</Typography>
+
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
             {/* Left PDF */}
-            <Box sx={{ width: "50%" }}>
-              {submission.file_url ? (
-                <PDFViewer
-                  file={submission.file_url}
-                />
-              ) : (
-                <Typography>No submission file uploaded</Typography>
-              )}
+            <Box sx={{ flex: "1 1 50%", minWidth: 300 }}>
+              <PDFViewer file={submission.file_url ? `http://localhost:8000/api${submission.file_url}` : null} />
             </Box>
 
             {/* Right Criteria */}
-            <Box sx={{ width: "50%", overflowY: "auto", maxHeight: "80vh" }}>
-              <Typography variant="h5" sx={{ mb: 2 }}>
-                Criteria
-              </Typography>
+            <Box sx={{ flex: "1 1 50%", minWidth: 300, overflowY: "auto", maxHeight: "80vh" }}>
+              <Typography variant="h5" sx={{ mb: 2 }}>Criteria</Typography>
 
               {criteria.map((c) => (
-                <CriteriaCard key={c.id} criteria={c} mark={mark} setMark={setMark} />
+                <CriteriaCard
+                  key={c.id}
+                  criteria={c}
+                  mark={mark}
+                  setMark={setMark}
+                  autoSave={autoSaveDraft}
+                  highlightError={finalizeError}
+                />
               ))}
 
-              <Box
-                sx={{
-                  mt: 3,
-                  p: 2,
-                  borderTop: "1px solid #ccc",
-                  display: "flex",
-                  justifyContent: "flex-end",
-                }}
-              >
+              <Box sx={{ mt: 3, p: 2, borderTop: "1px solid #ccc", display: "flex", justifyContent: "flex-end" }}>
                 <Typography variant="h6" sx={{ color: "#66CCFF" }}>
                   Total Score: {totalScore} / {maxScore}
                 </Typography>
               </Box>
 
+              {finalizeError && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  Please mark all criteria before finalizing!
+                </Alert>
+              )}
+
               <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
                 <Button
                   variant="contained"
-                  onClick={() => handleSave(false)}
-                  disabled={mark.is_finalized}
+                  onClick={() => navigate(`/${userId}/marker/assignment/${assignmentId}`)}
                 >
-                  Save Draft
+                  Go Back
                 </Button>
+
                 <Button
                   variant="contained"
                   color="success"
-                  onClick={() => handleSave(true)}
+                  onClick={handleFinalize}
                   disabled={mark.is_finalized}
                 >
                   Finalize
@@ -295,6 +313,18 @@ export default function MarkingPage() {
             </Box>
           </Box>
         </Box>
+
+        {/* Snackbar for auto-save */}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={1500}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        >
+          <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: "100%" }} elevation={6} variant="filled">
+            Draft saved
+          </Alert>
+        </Snackbar>
       </Box>
     </>
   );

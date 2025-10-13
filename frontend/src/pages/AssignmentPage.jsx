@@ -404,7 +404,7 @@ export default function AssignmentPage() {
                   key={submission.id}
                   submission={submission}
                   downloadFile={downloadFile}
-                  onViewDetails={(sub) => navigate(`/${userId}/submission/${sub.id}/details`)}
+                  onViewDetails={(sub) => navigate(`/${userId}/assignment/${assignmentId}/submission/${sub.id}/marks`)}
                 />
               ))
             ) : (

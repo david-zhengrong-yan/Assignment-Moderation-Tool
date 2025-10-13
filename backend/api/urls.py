@@ -17,6 +17,7 @@ urlpatterns = [
     path("<int:user_id>/assignment/<assignment_id>/submission/<int:submission_id>/mark", views.submission_mark_view, name="submission_mark_view"),
     path("marker/assignment/<int:assignment_id>/", views.marker_assignment_detail_view, name="marker_assignment_detail_view"),
     path("submission/<int:submission_id>/marks", views.marks_by_submission_view, name="marks_by_submission_view"),
+    path("assignment/<int:assignment_id>/submission/<int:submission_id>/marks", views.mark_comparison_view, name="mark_comparison_view"),
     path('assignment/<int:assignment_id>/download/', views.download_assignment_file, name='download_assignment'),
     path('assignment/<int:assignment_id>/rubric/download/', views.download_rubric_file, name='download_rubric'),
     path('submission/<int:submission_id>/download/', views.download_submission_file, name='download_submission'),

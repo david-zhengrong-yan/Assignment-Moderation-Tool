@@ -864,46 +864,32 @@ def marks_by_submission_view(request, submission_id):
 
 
 
-
-
-
-
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def submission_mark_view(request, user_id, assignment_id, submission_id):
     """
     GET  -> Retrieve the mark information and rubric (mark_criteria)
-    POST -> Save or update the marker's marks
+    POST -> Save or update the marker's marks (draft or finalized)
     """
-
     # -----------------------
     # 1. Authenticate user
     # -----------------------
     sessionid = request.headers.get("X-Session-ID")
     if not sessionid:
-        return JsonResponse(
-            {"successful": False, "message": "User is not logged in"},
-            status=401
-        )
+        return JsonResponse({"successful": False, "message": "User not logged in"}, status=401)
 
     try:
         session = Session.objects.get(session_key=sessionid)
         uid = session.get_decoded().get("_auth_user_id")
         authenticated_user = User.objects.get(id=uid)
     except (Session.DoesNotExist, User.DoesNotExist):
-        return JsonResponse(
-            {"successful": False, "message": "Invalid or expired session"},
-            status=401
-        )
+        return JsonResponse({"successful": False, "message": "Invalid session"}, status=401)
 
     # -----------------------
-    # 2. Authorization check
+    # 2. Authorization
     # -----------------------
     if authenticated_user.role != "marker":
-        return JsonResponse(
-            {"successful": False, "message": "Only markers can access this endpoint"},
-            status=403
-        )
+        return JsonResponse({"successful": False, "message": "Only markers allowed"}, status=403)
 
     # -----------------------
     # 3. Validate resources
@@ -912,7 +898,7 @@ def submission_mark_view(request, user_id, assignment_id, submission_id):
     submission = get_object_or_404(Submission, id=submission_id, assignment=assignment)
 
     # -----------------------
-    # 4. GET request — retrieve data
+    # GET request
     # -----------------------
     if request.method == "GET":
         mark, _ = Mark.objects.get_or_create(
@@ -920,23 +906,11 @@ def submission_mark_view(request, user_id, assignment_id, submission_id):
             submission=submission,
             defaults={"marks": {}, "is_finalized": False}
         )
-
-        assignment_data = {
-            "id": assignment.id,
-            "name": assignment.name,
-            "creation_date": assignment.creation_date,
-            "due_date": assignment.due_date,
-            "administrator": assignment.administrator.email if assignment.administrator else None,
-            "rubric_file": assignment.rubric.url if assignment.rubric else None,
-            "assignment_file": assignment.assignment_file.url if assignment.assignment_file else None,
-            "mark_criteria": assignment.mark_criteria,  # ✅ the rubric JSON
-        }
-
         data = {
             "successful": True,
             "mark": {
                 "id": mark.id,
-                "marks": mark.marks,  # e.g. {"1": {"level_id": 2, "score": 8}}
+                "marks": mark.marks,
                 "is_finalized": mark.is_finalized,
             },
             "submission": {
@@ -945,18 +919,26 @@ def submission_mark_view(request, user_id, assignment_id, submission_id):
                 "file_url": submission.submission_file.url if submission.submission_file else None,
                 "comment": submission.comment,
             },
-            "assignment": assignment_data,
+            "assignment": {
+                "id": assignment.id,
+                "name": assignment.name,
+                "creation_date": assignment.creation_date,
+                "due_date": assignment.due_date,
+                "administrator": assignment.administrator.email if assignment.administrator else None,
+                "rubric_file": assignment.rubric.url if assignment.rubric else None,
+                "assignment_file": assignment.assignment_file.url if assignment.assignment_file else None,
+                "mark_criteria": assignment.mark_criteria,
+            },
             "marker": {
                 "id": authenticated_user.id,
                 "email": authenticated_user.email,
                 "role": authenticated_user.role,
             },
         }
-
         return JsonResponse(data, status=200)
 
     # -----------------------
-    # 5. POST request — save/update marks
+    # POST request
     # -----------------------
     elif request.method == "POST":
         try:
@@ -964,25 +946,70 @@ def submission_mark_view(request, user_id, assignment_id, submission_id):
             new_marks = body.get("marks", {})
             is_finalized = body.get("is_finalized", False)
         except json.JSONDecodeError:
-            return JsonResponse(
-                {"successful": False, "message": "Invalid JSON payload"},
-                status=400
-            )
+            return JsonResponse({"successful": False, "message": "Invalid JSON"}, status=400)
 
-        mark, _ = Mark.objects.get_or_create(
+        mark, created = Mark.objects.get_or_create(
             marker=authenticated_user,
             submission=submission,
             defaults={"marks": {}, "is_finalized": False}
         )
 
+        # Always update existing marks
         mark.marks = new_marks
         mark.is_finalized = is_finalized
         mark.save()
 
         return JsonResponse(
-            {"successful": True, "message": "Mark saved successfully"},
+            {"successful": True, "message": "Mark saved successfully", "mark": {"id": mark.id, "marks": mark.marks, "is_finalized": mark.is_finalized}},
             status=200
         )
+    
+
+@require_GET
+def mark_comparison_view(request, assignment_id, submission_id):
+    try:
+        submission = Submission.objects.get(pk=submission_id, assignment__id=assignment_id)
+    except Submission.DoesNotExist:
+        return JsonResponse(
+            {"successful": False, "message": "Submission not found"},
+            status=404
+        )
+
+    # ----------------------------
+    # Administrator marks
+    # ----------------------------
+    admin_marks = submission.admin_marks or {}
+
+    # ----------------------------
+    # Markers' marks
+    # ----------------------------
+    markers_qs = Mark.objects.filter(submission=submission).select_related('marker')
+    markers_list = []
+    for mark in markers_qs:
+        markers_list.append({
+            "id": mark.id,
+            "marker": {
+                "id": mark.marker.id,
+                "email": mark.marker.email,
+                "username": mark.marker.username,
+            },
+            "marks": mark.marks,  # JSON field
+            "isFinalized": mark.is_finalized,
+        })
+
+    # ----------------------------
+    # Include assignment rubric
+    # ----------------------------
+    rubric = submission.assignment.mark_criteria or {}
+
+    return JsonResponse({
+        "successful": True,
+        "submissionId": submission_id,
+        "assignmentId": assignment_id,
+        "rubric": rubric,        # full rubric JSON
+        "admin_marks": admin_marks,
+        "markers": markers_list
+    }, status=200)
 
 
 
