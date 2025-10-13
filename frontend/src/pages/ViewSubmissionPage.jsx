@@ -17,114 +17,137 @@ import {
   TableContainer,
   LinearProgress,
   Chip,
+  CircularProgress,
 } from "@mui/material";
 import Navbar from "../components/Navbar";
+import { useParams } from "react-router";
 
-const LEFT_NAV_WIDTH = 200; // match your permanent left navbar width
-
-// -------- Mock data (replace with API later) --------
-const RUBRICS = Array.from({ length: 10 }, (_, i) => ({
-  id: `r${i + 1}`,
-  name: `Rubric ${i + 1}`,
-  fullMark: 10,
-}));
-
-// Administrator’s marks (per rubric)
-const ADMIN_MARKS = [6, 7, 8, 9, 7, 6, 8, 7, 9, 8];
-
-// Marker marks: markers[m][r] = score for marker m on rubric r
-const MARKER_MARKS = [
-  [6, 7, 8, 10, 7, 6, 9, 7, 11, 8],
-  [6, 6, 8, 9, 7, 6, 7, 7, 8, 8],
-  [5, 7, 7, 8, 6, 7, 8, 6, 7, 8],
-  [7, 8, 9, 11, 6, 6, 9, 8, 11, 9],
-  [6, 7, 8, 8, 7, 6, 7, 7, 9, 8],
-  [4, 6, 6, 7, 5, 5, 6, 5, 6, 7],
-  [6, 8, 9, 9, 8, 7, 8, 7, 10, 8],
-  [5, 7, 8, 8, 7, 5, 8, 7, 8, 7],
-  [6, 7, 9, 9, 7, 6, 9, 8, 10, 9],
-  [6, 7, 8, 9, 7, 6, 8, 7, 9, 8],
-];
-
-const MARKERS = MARKER_MARKS.map((row, i) => ({
-  id: `m${i + 1}`,
-  name: `Marker ${i + 1}`,
-  marks: row,
-}));
-
-// Highlight thresholds
-const ABS_THRESHOLD = 2; // mark mode: +/- 2
-const PCT_THRESHOLD = 0.15; // percentage mode: +/- 15%
+const LEFT_NAV_WIDTH = 200;
+const ABS_THRESHOLD = 2;
+const PCT_THRESHOLD = 0.15;
 
 export default function ViewSubmissionPage() {
-  const [mode, setMode] = React.useState("mark"); // 'mark' | 'percentage'
-  const fullMarks = RUBRICS.map((r) => r.fullMark);
+  const { assignmentId, submissionId } = useParams();
+  const [loading, setLoading] = React.useState(true);
+  const [rubrics, setRubrics] = React.useState([]);
+  const [levels, setLevels] = React.useState([]);
+  const [adminMarks, setAdminMarks] = React.useState({});
+  const [markers, setMarkers] = React.useState([]);
+  const [mode, setMode] = React.useState("mark"); // mark or percentage
 
-  // KPI 1: how many markers finished (simple rule: provided all rubric scores)
-  const markersFinished = React.useMemo(
-    () =>
-      MARKERS.filter(
-        (m) =>
-          m.marks.length === RUBRICS.length && m.marks.every((v) => v != null)
-      ).length,
-    []
-  );
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:8000/api/assignment/${assignmentId}/submission/${submissionId}/marks`,
+          { headers: { "X-Session-ID": localStorage.getItem("sessionid") } }
+        );
+        const data = await res.json();
+        if (!data.successful) throw new Error(data.message || "Failed to fetch data");
 
-  // KPI 2: admin average as a percentage of full marks
-  const currentAveragePct = React.useMemo(() => {
-    const ratios = ADMIN_MARKS.map((v, i) => v / (fullMarks[i] || 1));
-    return Math.round(
-      (ratios.reduce((a, b) => a + b, 0) / ratios.length) * 100
-    );
-  }, [fullMarks]);
+        const rubricCriteria = data.rubric.criteria || [];
+        const rubricLevels = data.rubric.levels || [];
+        setRubrics(rubricCriteria);
+        setLevels(rubricLevels);
 
+        // Convert admin marks to numeric max scores
+        const numericAdminMarks = {};
+        rubricCriteria.forEach((r) => {
+          const levelId = data.admin_marks[r.id];
+          const levelIndex = r.cells.findIndex((c, i) => rubricLevels[i]?.id === levelId);
+          numericAdminMarks[r.id] = levelIndex >= 0 ? r.cells[levelIndex].max : null;
+        });
+        setAdminMarks(numericAdminMarks);
+
+        // Markers
+        const normalizedMarkers = (data.markers || []).map((m) => ({
+          id: m.id,
+          name: m.marker.username || m.marker.email,
+          marks: rubricCriteria.map((r) => (m.marks[r.id]?.score ?? null)),
+          isFinalized: m.isFinalized,
+        }));
+        setMarkers(normalizedMarkers);
+
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [assignmentId, submissionId]);
+
+  const fullMarks = rubrics.map((r) => r.maxScore || 0);
   const handleMode = (_e, next) => next && setMode(next);
 
-  // Convert a raw value to display text depending on the mode
+  // KPI: markers finalized
+  const markersFinished = React.useMemo(() => markers.filter((m) => m.isFinalized).length, [markers]);
+
+  // KPI: current average across finalized markers only
+  const currentAveragePct = React.useMemo(() => {
+    const finalizedMarkers = markers.filter((m) => m.isFinalized);
+    if (!rubrics.length || finalizedMarkers.length === 0) return 0;
+
+    const totalSum = finalizedMarkers.reduce((sumMarkers, m) => {
+      const sum = rubrics.reduce((sumR, r, i) => sumR + (m.marks[i] ?? 0), 0);
+      return sumMarkers + sum;
+    }, 0);
+
+    const totalFullMarks = rubrics.reduce((sum, r) => sum + (r.maxScore || 0), 0) * finalizedMarkers.length;
+    return Math.round((totalSum / totalFullMarks) * 100);
+  }, [markers, rubrics]);
+
   const toDisplay = (value, rIdx) => {
     if (value == null) return "—";
     if (mode === "percentage") {
-      const pct = (value / (fullMarks[rIdx] || 1)) * 100;
-      return `${Math.round(pct)}%`;
+      const totalFull = fullMarks[rIdx] || 1;
+      return `${Math.round((value / totalFull) * 100)}%`;
     }
     return value;
   };
 
-  // Compute cell highlight vs. Administrator’s mark
   const cellStyle = (value, rIdx) => {
-    const admin = ADMIN_MARKS[rIdx];
-    if (value == null || admin == null) return {};
+    const adminScore = adminMarks[rubrics[rIdx].id];
+    if (value == null || adminScore == null) return {};
+    const diff = value - adminScore;
     if (mode === "percentage") {
-      const fm = fullMarks[rIdx] || 1;
-      const diff = value / fm - admin / fm;
-      if (diff >= PCT_THRESHOLD) return { backgroundColor: "#FDE2E1" }; // higher -> red
-      if (diff <= -PCT_THRESHOLD) return { backgroundColor: "#FFF7D6" }; // lower -> yellow
-      return {};
+      const diffPct = value / (fullMarks[rIdx] || 1) - adminScore / (fullMarks[rIdx] || 1);
+      if (diffPct >= PCT_THRESHOLD) return { backgroundColor: "#FDE2E1" };
+      if (diffPct <= -PCT_THRESHOLD) return { backgroundColor: "#FFF7D6" };
     } else {
-      const diff = value - admin;
       if (diff >= ABS_THRESHOLD) return { backgroundColor: "#FDE2E1" };
       if (diff <= -ABS_THRESHOLD) return { backgroundColor: "#FFF7D6" };
-      return {};
     }
+    return {};
   };
+
+  const totalMarker = (marks) => {
+    const sum = marks.reduce((a, b) => a + (b ?? 0), 0);
+    if (mode === "percentage") {
+      const totalFull = fullMarks.reduce((a, b) => a + b, 0);
+      return totalFull ? Math.round((sum / totalFull) * 100) + "%" : "—";
+    }
+    return sum;
+  };
+
+  const totalAdmin = () => {
+    const sum = rubrics.reduce((acc, r) => acc + (adminMarks[r.id] ?? 0), 0);
+    if (mode === "percentage") {
+      const totalFull = fullMarks.reduce((a, b) => a + b, 0);
+      return totalFull ? Math.round((sum / totalFull) * 100) + "%" : "—";
+    }
+    return sum;
+  };
+
+  if (loading) return <CircularProgress sx={{ mt: 10, ml: 10 }} />;
 
   return (
     <>
       <CssBaseline />
       <Navbar />
-      <Box
-        component="main"
-        sx={{
-          ml: `${LEFT_NAV_WIDTH}px`,
-          minHeight: "100vh",
-          bgcolor: "#F5F6F8",
-          py: 5,
-        }}
-      >
+      <Box component="main" sx={{ ml: `${LEFT_NAV_WIDTH}px`, minHeight: "100vh", bgcolor: "#F5F6F8", py: 5 }}>
         <Container maxWidth="lg">
-          <Typography variant="h4" sx={{ mb: 3 }}>
-            View Submission
-          </Typography>
+          <Typography variant="h4" sx={{ mb: 3 }}>View Submission</Typography>
 
           {/* KPI cards */}
           <Grid container spacing={3} sx={{ mb: 2 }}>
@@ -132,27 +155,17 @@ export default function ViewSubmissionPage() {
               <Paper sx={{ p: 2 }}>
                 <LinearProgress
                   variant="determinate"
-                  value={(markersFinished / MARKERS.length) * 100}
+                  value={(markersFinished / (markers.length || 1)) * 100}
                   sx={{ mb: 1 }}
                 />
-                <Typography variant="subtitle2" color="text.secondary">
-                  # markers finished marking
-                </Typography>
-                <Typography variant="h5">
-                  {markersFinished} / {MARKERS.length}
-                </Typography>
+                <Typography variant="subtitle2" color="text.secondary"># markers finished marking</Typography>
+                <Typography variant="h5">{markersFinished} / {markers.length}</Typography>
               </Paper>
             </Grid>
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 2 }}>
-                <LinearProgress
-                  variant="determinate"
-                  value={currentAveragePct}
-                  sx={{ mb: 1 }}
-                />
-                <Typography variant="subtitle2" color="text.secondary">
-                  # Current Average(%)
-                </Typography>
+                <LinearProgress variant="determinate" value={currentAveragePct} sx={{ mb: 1 }} />
+                <Typography variant="subtitle2" color="text.secondary"># Current Average(%)</Typography>
                 <Typography variant="h5">{currentAveragePct}%</Typography>
               </Paper>
             </Grid>
@@ -161,87 +174,60 @@ export default function ViewSubmissionPage() {
           {/* View mode toggle */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
             <Typography variant="body1">View:</Typography>
-            <ToggleButtonGroup
-              value={mode}
-              exclusive
-              onChange={handleMode}
-              size="small"
-              color="primary"
-            >
+            <ToggleButtonGroup value={mode} exclusive onChange={handleMode} size="small" color="primary">
               <ToggleButton value="mark">Mark</ToggleButton>
               <ToggleButton value="percentage">Percentage</ToggleButton>
             </ToggleButtonGroup>
           </Box>
 
-          {/* Table */}
           <Paper sx={{ p: 0, overflow: "hidden" }}>
             <TableContainer sx={{ maxHeight: 520 }}>
               <Table stickyHeader size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 600, width: 160 }}>
-                      Rubric
-                    </TableCell>
-                    {MARKERS.map((m) => (
-                      <TableCell
-                        key={m.id}
-                        align="center"
-                        sx={{ fontWeight: 600 }}
-                      >
-                        {m.name}
+                    <TableCell sx={{ fontWeight: 600, width: 200 }}>Rubric / Criteria</TableCell>
+                    {markers.map((m) => (
+                      <TableCell key={m.id} align="center" sx={{ fontWeight: 600 }}>
+                        {m.name}{!m.isFinalized && " (Not Finalized)"}
                       </TableCell>
                     ))}
-                    <TableCell align="center" sx={{ fontWeight: 600 }}>
-                      Administrator
-                    </TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 600 }}>Administrator</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {RUBRICS.map((r, rIdx) => (
+                  {rubrics.map((r, rIdx) => (
                     <TableRow key={r.id}>
-                      <TableCell sx={{ fontWeight: 500 }}>{r.name}</TableCell>
-                      {MARKERS.map((m) => {
-                        const val = m.marks[rIdx];
-                        return (
-                          <TableCell
-                            key={`${m.id}-${rIdx}`}
-                            align="center"
-                            sx={cellStyle(val, rIdx)}
-                          >
-                            {toDisplay(val, rIdx)}
-                          </TableCell>
-                        );
-                      })}
-                      <TableCell
-                        align="center"
-                        sx={{ backgroundColor: "#EEF2FF", fontWeight: 600 }}
-                      >
-                        {toDisplay(ADMIN_MARKS[rIdx], rIdx)}
+                      <TableCell sx={{ fontWeight: 500 }}>{r.title}</TableCell>
+                      {markers.map((m) => (
+                        <TableCell key={m.id + "-" + rIdx} align="center" sx={cellStyle(m.marks[rIdx], rIdx)}>
+                          {toDisplay(m.marks[rIdx], rIdx)}
+                        </TableCell>
+                      ))}
+                      <TableCell align="center" sx={{ backgroundColor: "#EEF2FF", fontWeight: 600 }}>
+                        {toDisplay(adminMarks[r.id], rIdx)}
                       </TableCell>
                     </TableRow>
                   ))}
+
+                  {/* Total row */}
+                  <TableRow sx={{ fontWeight: 600, backgroundColor: "#EEF2FF" }}>
+                    <TableCell>Total</TableCell>
+                    {markers.map((m) => (
+                      <TableCell key={"total-" + m.id} align="center">{totalMarker(m.marks)}</TableCell>
+                    ))}
+                    <TableCell align="center">{totalAdmin()}</TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </TableContainer>
 
-            {/* Legend */}
             <Box sx={{ p: 2 }}>
               <Chip size="small" label="Mark" sx={{ mr: 1 }} />
               <Chip size="small" label="Percentage" variant="outlined" />
               <Box sx={{ mt: 2, fontSize: 12, color: "text.secondary" }}>
-                <div>
-                  Note:{" "}
-                  <span style={{ background: "#FDE2E1", padding: "0 6px" }}>
-                    Red highlight
-                  </span>{" "}
-                  = higher than Administrator’s mark.
-                </div>
-                <div>
-                  <span style={{ background: "#FFF7D6", padding: "0 6px" }}>
-                    Yellow highlight
-                  </span>{" "}
-                  = lower than Administrator’s mark.
-                </div>
+                <div>Note: <span style={{ background: "#FDE2E1", padding: "0 6px" }}>Red highlight</span> = higher than Administrator’s mark.</div>
+                <div><span style={{ background: "#FFF7D6", padding: "0 6px" }}>Yellow highlight</span> = lower than Administrator’s mark.</div>
+                <div>Non-finalized markers are shown with "(Not Finalized)" in the column header.</div>
               </Box>
             </Box>
           </Paper>

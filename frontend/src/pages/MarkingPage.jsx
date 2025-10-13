@@ -1,3 +1,4 @@
+// src/pages/MarkingPage.jsx
 import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
@@ -27,7 +28,8 @@ function PDFViewer({ file }) {
   const onDocumentLoadSuccess = ({ numPages }) => setNumPages(numPages);
 
   useEffect(() => {
-    const updateWidth = () => setContainerWidth(Math.min(window.innerWidth / 2 - 100, 800));
+    const updateWidth = () =>
+      setContainerWidth(Math.min(window.innerWidth / 2 - 50, 800));
     updateWidth();
     window.addEventListener("resize", updateWidth);
     return () => window.removeEventListener("resize", updateWidth);
@@ -36,10 +38,22 @@ function PDFViewer({ file }) {
   if (!file) return <Typography>No submission file uploaded</Typography>;
 
   return (
-    <Box sx={{ border: "1px solid #ccc", borderRadius: 2, overflowY: "auto", maxHeight: 600, p: 1, mb: 1 }}>
+    <Box
+      sx={{
+        border: "1px solid #ccc",
+        borderRadius: 2,
+        overflowY: "auto",
+        flex: 1,
+        p: 1,
+      }}
+    >
       <Document file={file} onLoadSuccess={onDocumentLoadSuccess}>
         {Array.from(new Array(numPages), (_, index) => (
-          <Page key={`page_${index + 1}`} pageNumber={index + 1} width={containerWidth} />
+          <Page
+            key={`page_${index + 1}`}
+            pageNumber={index + 1}
+            width={containerWidth}
+          />
         ))}
       </Document>
     </Box>
@@ -50,7 +64,6 @@ function PDFViewer({ file }) {
 // Criteria Card Component
 // ---------------------------
 const CriteriaCard = ({ criteria, mark, setMark, autoSave, highlightError }) => {
-  const [page, setPage] = useState(null);
   const selectedIndex = mark.marks?.[criteria.id]?.level_index ?? null;
 
   const handleLevelSelect = (levelIndex) => {
@@ -66,7 +79,6 @@ const CriteriaCard = ({ criteria, mark, setMark, autoSave, highlightError }) => 
       if (autoSave) autoSave(updatedMarks);
       return { ...prev, marks: updatedMarks };
     });
-    setPage(levelIndex + 1);
   };
 
   return (
@@ -87,7 +99,7 @@ const CriteriaCard = ({ criteria, mark, setMark, autoSave, highlightError }) => 
       </Typography>
 
       <Pagination
-        page={page || 0}
+        page={selectedIndex !== null ? selectedIndex + 1 : 0}
         shape="rounded"
         variant="outlined"
         sx={{ width: "100%" }}
@@ -99,7 +111,11 @@ const CriteriaCard = ({ criteria, mark, setMark, autoSave, highlightError }) => 
           return (
             <PaginationItem
               {...item}
-              sx={{ flex: 1, bgcolor: isSelected ? "#66CCFF" : undefined, color: isSelected ? "#fff" : undefined }}
+              sx={{
+                flex: 1,
+                bgcolor: isSelected ? "#66CCFF" : undefined,
+                color: isSelected ? "#fff" : undefined,
+              }}
               page={display}
               onClick={() => handleLevelSelect(item.page - 1)}
             />
@@ -143,6 +159,9 @@ export default function MarkingPage() {
     setSnackbarOpen(false);
   };
 
+  // ---------------------------
+  // Fetch data
+  // ---------------------------
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -200,7 +219,6 @@ export default function MarkingPage() {
         if (!data.successful) throw new Error(data.message);
 
         setSnackbarOpen(true);
-        console.log("Draft auto-saved");
       } catch (err) {
         console.error("Auto-save failed:", err);
       }
@@ -208,7 +226,7 @@ export default function MarkingPage() {
   };
 
   // ---------------------------
-  // Finalize with validation
+  // Finalize marking
   // ---------------------------
   const handleFinalize = async () => {
     const unmarked = criteria.filter((c) => mark.marks?.[c.id]?.level_index === undefined);
@@ -242,7 +260,7 @@ export default function MarkingPage() {
     }
   };
 
-  if (loading) return <CircularProgress />;
+  if (loading) return <CircularProgress sx={{ mt: 10, ml: 10 }} />;
 
   const totalScore = criteria.reduce((sum, c) => sum + (mark.marks?.[c.id]?.score || 0), 0);
   const maxScore = criteria.reduce((sum, c) => sum + (c.maxScore || c.totalMark || 0), 0);
@@ -256,30 +274,48 @@ export default function MarkingPage() {
           <Navbar />
         </Box>
 
-        {/* Main content */}
-        <Box component="main" sx={{ flexGrow: 1, p: 4, bgcolor: "#fff", boxSizing: "border-box", minWidth: 0 }}>
-          <Typography variant="h4" sx={{ mb: 2 }}>{submission.name}</Typography>
+        {/* Main Content */}
+        <Box component="main" sx={{ flexGrow: 1, p: 4, bgcolor: "#fff", minWidth: 0 }}>
+          <Typography variant="h4" sx={{ mb: 2 }}>
+            {submission.name}
+          </Typography>
 
-          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+          {/* Left PDF + Right Criteria */}
+          <Box sx={{ display: "flex", width: "100%", minHeight: "80vh", gap: 2 }}>
             {/* Left PDF */}
-            <Box sx={{ flex: "1 1 50%", minWidth: 300 }}>
-              <PDFViewer file={submission.file_url ? `http://localhost:8000/api${submission.file_url}` : null} />
+            <Box sx={{ width: "50%", minWidth: 0, display: "flex", flexDirection: "column" }}>
+              <PDFViewer
+                file={submission.file_url ? `http://localhost:8000/api${submission.file_url}` : null}
+              />
             </Box>
 
             {/* Right Criteria */}
-            <Box sx={{ flex: "1 1 50%", minWidth: 300, overflowY: "auto", maxHeight: "80vh" }}>
-              <Typography variant="h5" sx={{ mb: 2 }}>Criteria</Typography>
+            <Box
+              sx={{
+                width: "50%",
+                minWidth: 0,
+                overflowY: "auto",
+                maxHeight: "80vh",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <Typography variant="h5" sx={{ mb: 2 }}>
+                Criteria
+              </Typography>
 
-              {criteria.map((c) => (
-                <CriteriaCard
-                  key={c.id}
-                  criteria={c}
-                  mark={mark}
-                  setMark={setMark}
-                  autoSave={autoSaveDraft}
-                  highlightError={finalizeError}
-                />
-              ))}
+              <Box sx={{ flexGrow: 1 }}>
+                {criteria.map((c) => (
+                  <CriteriaCard
+                    key={c.id}
+                    criteria={c}
+                    mark={mark}
+                    setMark={setMark}
+                    autoSave={autoSaveDraft}
+                    highlightError={finalizeError}
+                  />
+                ))}
+              </Box>
 
               <Box sx={{ mt: 3, p: 2, borderTop: "1px solid #ccc", display: "flex", justifyContent: "flex-end" }}>
                 <Typography variant="h6" sx={{ color: "#66CCFF" }}>
@@ -314,14 +350,20 @@ export default function MarkingPage() {
           </Box>
         </Box>
 
-        {/* Snackbar for auto-save */}
+        {/* Snackbar */}
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={1500}
           onClose={handleCloseSnackbar}
           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         >
-          <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: "100%" }} elevation={6} variant="filled">
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity="success"
+            sx={{ width: "100%" }}
+            elevation={6}
+            variant="filled"
+          >
             Draft saved
           </Alert>
         </Snackbar>

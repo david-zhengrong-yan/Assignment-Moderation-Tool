@@ -207,6 +207,13 @@ def signup_view(request):
         new_user.set_password(password)  # hash the password!
         new_user.save()
 
+        submissions = Submission.objects.all()
+        marks_to_create = [
+            Mark(marker=new_user, submission=sub, marks={}, is_finalized=False)
+            for sub in submissions
+        ]
+        Mark.objects.bulk_create(marks_to_create)
+
         return JsonResponse(
             {"successful": True, "message": "Sign-up successful"},
             status=200
