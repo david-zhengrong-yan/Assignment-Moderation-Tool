@@ -83,7 +83,7 @@ that streamlines the entire moderation process — from assignment upload to tut
 
 ---
 
-## 🔄 Data Flow
+##  Data Flow
 
 ```pgsql
 ┌───────────────────────────────────────────────┐
@@ -133,6 +133,7 @@ that streamlines the entire moderation process — from assignment upload to tut
 
 ### Frontend (`frontend/`)
 
+```pgsql
 frontend/
 │
 ├── public/
@@ -168,11 +169,13 @@ frontend/
 │ ├── App.jsx / main.jsx # Routing and app entry point
 │ ├── App.css / index.css # Global styles
 │ └── vite.config.js # Build configuration
+```
 
 ---
 
 ### Backend (`backend/`)
 
+```pgsql
 backend/
 │
 ├── api/
@@ -201,6 +204,7 @@ backend/
 │ ├── *.jpeg / *.pdf
 │
 └── manage.py # Django entry point
+```
 
 ---
 
