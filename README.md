@@ -85,32 +85,32 @@ that streamlines the entire moderation process — from assignment upload to tut
 
 ## Data Flow
 
-┌─────────────────────────────┐
-│ Professor uploads Rubric    │
-│ (.docx)                     │
-└──────────┬──────────────────┘
+┌───────────────────────────────────────────────┐
+│ Professor uploads Rubric (.docx) │
+└───────────────────────────────────────────────┘
+│
 ▼
-┌──────────────────────────────┐
-│ System parses rubric into    │
-│ JSON using Mammoth.js        │
-└──────────┬───────────────────┘
+┌───────────────────────────────────────────────┐
+│ System parses rubric into JSON using Mammoth.js│
+└───────────────────────────────────────────────┘
+│
 ▼
-┌──────────────────────────────┐
-│ All tutors log in and mark   │
-│ the same assignments online  │
-└──────────┬───────────────────┘
+┌───────────────────────────────────────────────┐
+│ All tutors log in and mark the same │
+│ assignments online │
+└───────────────────────────────────────────────┘
+│
 ▼
-┌──────────────────────────────┐
-│ Backend aggregates results,  │
-│ compares marks, highlights   │
-│ deviations and averages      │
-└──────────┬───────────────────┘
+┌───────────────────────────────────────────────┐
+│ Backend aggregates results, compares marks, │
+│ highlights deviations and averages │
+└───────────────────────────────────────────────┘
+│
 ▼
-┌──────────────────────────────┐
-│ Professor views analytics and│
-│ consistency reports          │
-└──────────────────────────────┘
-
+┌───────────────────────────────────────────────┐
+│ Professor views analytics and consistency │
+│ reports │
+└───────────────────────────────────────────────┘
 ---
 
 ## Technology Stack
