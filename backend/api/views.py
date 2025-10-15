@@ -1057,3 +1057,24 @@ def download_rubric_file(request, assignment_id):
 def download_submission_file(request, submission_id):
     submission = get_object_or_404(Submission, pk=submission_id)
     return _serve_file(submission.submission_file)
+
+
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def submission_pdf_view(request, submission_id):
+    """
+    GET -> Return the submission PDF file.
+    """
+    try:
+        submission = Submission.objects.get(pk=submission_id)
+    except Submission.DoesNotExist:
+        return JsonResponse({"successful": False, "error": "Submission not found"}, status=404)
+
+    if not submission.submission_file:
+        return JsonResponse({"successful": False, "error": "No file attached to this submission"}, status=404)
+
+    # Serve the file (Django handles storage backend automatically)
+    file = submission.submission_file.open("rb")
+    return FileResponse(file, content_type="application/pdf")

@@ -10,58 +10,178 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  IconButton,
 } from "@mui/material";
+
 import { useParams, useNavigate } from "react-router";
 import Navbar from "../components/Navbar";
 import { Document, Page, pdfjs } from "react-pdf";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
+import ZoomInIcon from "@mui/icons-material/ZoomIn";
+import ZoomOutIcon from "@mui/icons-material/ZoomOut";
+import FitScreenIcon from "@mui/icons-material/FitScreen";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-// ---------------------------
-// PDF Viewer Component
-// ---------------------------
-function PDFViewer({ file }) {
+// PDF Viewer Component (Zoom + Reset)
+function PDFViewer({ submissionId }) {
   const [numPages, setNumPages] = useState(null);
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [scale, setScale] = useState(1);
   const [containerWidth, setContainerWidth] = useState(600);
+
+  const viewerRef = useRef(null);
 
   const onDocumentLoadSuccess = ({ numPages }) => setNumPages(numPages);
 
+  // Adjust container width dynamically
   useEffect(() => {
-    const updateWidth = () =>
-      setContainerWidth(Math.min(window.innerWidth / 2 - 50, 800));
+    const updateWidth = () => setContainerWidth(Math.min(window.innerWidth / 2 - 60, 900));
     updateWidth();
     window.addEventListener("resize", updateWidth);
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
-  if (!file) return <Typography>No submission file uploaded</Typography>;
+  // Fetch PDF
+  useEffect(() => {
+    const fetchPdf = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:8000/api/submissions/${submissionId}/pdf/`,
+          { method: "GET", headers: { "X-Session-ID": localStorage.getItem("sessionid") } }
+        );
+        if (!res.ok) throw new Error("Failed to fetch PDF");
+        const blob = await res.blob();
+        setPdfUrl(URL.createObjectURL(blob));
+      } catch (err) {
+        console.error("Error loading PDF:", err);
+      }
+    };
+    if (submissionId) fetchPdf();
+  }, [submissionId]);
+
+  // Keyboard zoom (Ctrl + / Ctrl -)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!e.ctrlKey) return;
+      if (e.key === "+" || e.key === "=") {
+        e.preventDefault();
+        setScale((prev) => Math.min(prev + 0.2, 3));
+      }
+      if (e.key === "-") {
+        e.preventDefault();
+        setScale((prev) => Math.max(prev - 0.2, 0.5));
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Mouse wheel zoom (Ctrl + wheel)
+  useEffect(() => {
+    const handleWheel = (e) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      if (e.deltaY < 0) setScale((prev) => Math.min(prev + 0.1, 3));
+      if (e.deltaY > 0) setScale((prev) => Math.max(prev - 0.1, 0.5));
+    };
+    const el = viewerRef.current;
+    if (el) el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el && el.removeEventListener("wheel", handleWheel);
+  }, []);
+
+  // Reset / Fit to width
+  const handleResetZoom = () => setScale(1);
+
+  if (!pdfUrl)
+    return (
+      <Box
+        sx={{
+          flex: 1,
+          border: "1px solid #ccc",
+          borderRadius: 2,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          bgcolor: "#fafafa",
+          height: "100%",
+        }}
+      >
+        <Typography>Loading PDF...</Typography>
+      </Box>
+    );
 
   return (
     <Box
+      ref={viewerRef}
       sx={{
+        flex: 1,
         border: "1px solid #ccc",
         borderRadius: 2,
-        overflowY: "auto",
-        flex: 1,
-        p: 1,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: "#fff",
+        overflow: "hidden",
       }}
     >
-      <Document file={file} onLoadSuccess={onDocumentLoadSuccess}>
-        {Array.from(new Array(numPages), (_, index) => (
-          <Page
-            key={`page_${index + 1}`}
-            pageNumber={index + 1}
-            width={containerWidth}
-          />
-        ))}
-      </Document>
+      {/* Zoom Controls */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", p: 1, gap: 1 }}>
+        <IconButton size="small" onClick={() => setScale((prev) => Math.min(prev + 0.2, 3))}>
+          <ZoomInIcon />
+        </IconButton>
+        <IconButton size="small" onClick={() => setScale((prev) => Math.max(prev - 0.2, 0.5))}>
+          <ZoomOutIcon />
+        </IconButton>
+        <IconButton size="small" onClick={handleResetZoom}>
+          <FitScreenIcon />
+        </IconButton>
+        <Typography variant="body2" sx={{ alignSelf: "center" }}>
+          {(scale * 100).toFixed(0)}%
+        </Typography>
+      </Box>
+
+      {/* PDF Pages */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          p: 2,
+          scrollBehavior: "smooth",
+          "&::-webkit-scrollbar": { width: 8 },
+          "&::-webkit-scrollbar-thumb": { backgroundColor: "#ccc", borderRadius: 4 },
+        }}
+      >
+        <Document file={pdfUrl} onLoadSuccess={onDocumentLoadSuccess}>
+          {Array.from(new Array(numPages), (_, index) => (
+            <Box
+              key={`page_${index + 1}`}
+              sx={{
+                mb: 2,
+                display: "flex",
+                justifyContent: "center",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                borderRadius: 1,
+                backgroundColor: "#fff",
+              }}
+            >
+              <Page
+                pageNumber={index + 1}
+                width={containerWidth * scale}
+                renderAnnotationLayer={false}
+                renderTextLayer={false}
+              />
+            </Box>
+          ))}
+        </Document>
+      </Box>
     </Box>
   );
 }
 
+
 // ---------------------------
-// Criteria Card Component
+// Criteria Card Component (unchanged)
 // ---------------------------
 const CriteriaCard = ({ criteria, mark, setMark, autoSave, highlightError }) => {
   const selectedIndex = mark.marks?.[criteria.id]?.level_index ?? null;
@@ -138,7 +258,7 @@ const CriteriaCard = ({ criteria, mark, setMark, autoSave, highlightError }) => 
 };
 
 // ---------------------------
-// Main Marking Page
+// Main Marking Page (unchanged)
 // ---------------------------
 export default function MarkingPage() {
   const { userId, assignmentId, submissionId } = useParams();
@@ -151,7 +271,6 @@ export default function MarkingPage() {
   const [mark, setMark] = useState({ marks: {}, is_finalized: false, id: null });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [finalizeError, setFinalizeError] = useState(false);
-
   const autoSaveTimer = useRef(null);
 
   const handleCloseSnackbar = (event, reason) => {
@@ -159,9 +278,6 @@ export default function MarkingPage() {
     setSnackbarOpen(false);
   };
 
-  // ---------------------------
-  // Fetch data
-  // ---------------------------
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -196,28 +312,20 @@ export default function MarkingPage() {
     fetchData();
   }, [userId, assignmentId, submissionId]);
 
-  // ---------------------------
-  // Auto-save draft
-  // ---------------------------
   const autoSaveDraft = (updatedMarks) => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-
     autoSaveTimer.current = setTimeout(async () => {
       try {
         const res = await fetch(
           `http://localhost:8000/api/${userId}/assignment/${assignmentId}/submission/${submissionId}/mark`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Session-ID": localStorage.getItem("sessionid"),
-            },
+            headers: { "Content-Type": "application/json", "X-Session-ID": localStorage.getItem("sessionid") },
             body: JSON.stringify({ marks: updatedMarks, is_finalized: false }),
           }
         );
         const data = await res.json();
         if (!data.successful) throw new Error(data.message);
-
         setSnackbarOpen(true);
       } catch (err) {
         console.error("Auto-save failed:", err);
@@ -225,9 +333,6 @@ export default function MarkingPage() {
     }, 500);
   };
 
-  // ---------------------------
-  // Finalize marking
-  // ---------------------------
   const handleFinalize = async () => {
     const unmarked = criteria.filter((c) => mark.marks?.[c.id]?.level_index === undefined);
     if (unmarked.length > 0) {
@@ -240,10 +345,7 @@ export default function MarkingPage() {
         `http://localhost:8000/api/${userId}/assignment/${assignmentId}/submission/${submissionId}/mark`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Session-ID": localStorage.getItem("sessionid"),
-          },
+          headers: { "Content-Type": "application/json", "X-Session-ID": localStorage.getItem("sessionid") },
           body: JSON.stringify({ marks: mark.marks, is_finalized: true }),
         }
       );
@@ -277,93 +379,42 @@ export default function MarkingPage() {
         {/* Main Content */}
         <Box component="main" sx={{ flexGrow: 1, p: 4, bgcolor: "#fff", minWidth: 0 }}>
           <Typography variant="h4" sx={{ mb: 2 }}>
-            {submission.name}
+            {submission?.name}
           </Typography>
 
           {/* Left PDF + Right Criteria */}
           <Box sx={{ display: "flex", width: "100%", minHeight: "80vh", gap: 2 }}>
             {/* Left PDF */}
-            <Box sx={{ width: "50%", minWidth: 0, display: "flex", flexDirection: "column" }}>
-              <PDFViewer
-                file={submission.file_url ? `http://localhost:8000/api${submission.file_url}` : null}
-              />
+            <Box sx={{ width: "50%", minWidth: 0, height: "calc(100vh - 160px)" }}>
+              <PDFViewer submissionId={submissionId} />
             </Box>
 
             {/* Right Criteria */}
-            <Box
-              sx={{
-                width: "50%",
-                minWidth: 0,
-                overflowY: "auto",
-                maxHeight: "80vh",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <Typography variant="h5" sx={{ mb: 2 }}>
-                Criteria
-              </Typography>
-
-              <Box sx={{ flexGrow: 1 }}>
+            <Box sx={{ width: "50%", minWidth: 0, display: "flex", flexDirection: "column", maxHeight: "calc(100vh - 160px)" }}>
+              <Typography variant="h5" sx={{ mb: 2 }}>Criteria</Typography>
+              <Box sx={{ flexGrow: 1, overflowY: "auto", pr: 1, scrollBehavior: "smooth", "&::-webkit-scrollbar": { width: 8 }, "&::-webkit-scrollbar-thumb": { backgroundColor: "#ccc", borderRadius: 4 } }}>
                 {criteria.map((c) => (
-                  <CriteriaCard
-                    key={c.id}
-                    criteria={c}
-                    mark={mark}
-                    setMark={setMark}
-                    autoSave={autoSaveDraft}
-                    highlightError={finalizeError}
-                  />
+                  <CriteriaCard key={c.id} criteria={c} mark={mark} setMark={setMark} autoSave={autoSaveDraft} highlightError={finalizeError} />
                 ))}
               </Box>
 
               <Box sx={{ mt: 3, p: 2, borderTop: "1px solid #ccc", display: "flex", justifyContent: "flex-end" }}>
-                <Typography variant="h6" sx={{ color: "#66CCFF" }}>
-                  Total Score: {totalScore} / {maxScore}
-                </Typography>
+                <Typography variant="h6" sx={{ color: "#66CCFF" }}>Total Score: {totalScore} / {maxScore}</Typography>
               </Box>
 
-              {finalizeError && (
-                <Alert severity="error" sx={{ mt: 2 }}>
-                  Please mark all criteria before finalizing!
-                </Alert>
-              )}
+              {finalizeError && <Alert severity="error" sx={{ mt: 2 }}>Please mark all criteria before finalizing!</Alert>}
 
               <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
-                <Button
-                  variant="contained"
-                  onClick={() => navigate(`/${userId}/marker/assignment/${assignmentId}`)}
-                >
-                  Go Back
-                </Button>
-
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={handleFinalize}
-                  disabled={mark.is_finalized}
-                >
-                  Finalize
-                </Button>
+                <Button variant="contained" onClick={() => navigate(`/${userId}/marker/assignment/${assignmentId}`)}>Go Back</Button>
+                <Button variant="contained" color="success" onClick={handleFinalize} disabled={mark.is_finalized}>Finalize</Button>
               </Box>
             </Box>
           </Box>
         </Box>
 
         {/* Snackbar */}
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={1500}
-          onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        >
-          <Alert
-            onClose={handleCloseSnackbar}
-            severity="success"
-            sx={{ width: "100%" }}
-            elevation={6}
-            variant="filled"
-          >
+        <Snackbar open={snackbarOpen} autoHideDuration={1500} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
+          <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: "100%" }} elevation={6} variant="filled">
             Draft saved
           </Alert>
         </Snackbar>

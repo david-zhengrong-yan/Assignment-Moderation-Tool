@@ -21,4 +21,5 @@ urlpatterns = [
     path('assignment/<int:assignment_id>/download/', views.download_assignment_file, name='download_assignment'),
     path('assignment/<int:assignment_id>/rubric/download/', views.download_rubric_file, name='download_rubric'),
     path('submission/<int:submission_id>/download/', views.download_submission_file, name='download_submission'),
+    path('submissions/<int:submission_id>/pdf/', views.submission_pdf_view, name='submission_pdf'),
 ] 
