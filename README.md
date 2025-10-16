@@ -256,7 +256,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
 - **Technology Stack:**  
   Implemented using **React**, **Material UI**, and **Axios** for API communication.
 
-### 🧾 Sign-Up Page
+### Sign-Up Page
 ![Sign-Up Page](./sign_up.png)
 
 - **Purpose:**  
@@ -276,6 +276,29 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
 
 - **Technology Stack:**  
   Implemented using **React**, **Material UI**, and **Axios** for REST API communication with the Django backend.
+
+### Edit Account Page
+![Edit Account Page](./edit_account.png)
+
+- **Purpose:**  
+  Allows users to manage and update their personal information, including username, email, password, and profile picture.
+
+- **Workflow:**
+  1. The user navigates to the **Edit Account** page from the sidebar.  
+  2. They can modify their **Username** and **Email**, or update their **Password**.  
+  3. Clicking the camera icon lets the user upload a new **Profile Picture** (supports JPEG, PNG, or WEBP up to 2MB).  
+  4. The user can **Cancel** changes or click **Save Changes** to update their profile.  
+
+- **Features:**
+  - Real-time form validation for empty or invalid fields.  
+  - Password confirmation check to prevent mismatches.  
+  - Profile photo upload with preview and file type restrictions.  
+  - Clear **Cancel** and **Save Changes** buttons with visual feedback.  
+  - Responsive layout ensuring consistent display across devices.  
+
+- **Technology Stack:**  
+  Built with **React**, **Material UI**, and **Axios**, communicating with the Django backend for profile management.
+
 
 ## Testing
 
