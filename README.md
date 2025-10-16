@@ -299,6 +299,40 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
 - **Technology Stack:**  
   Built with **React**, **Material UI**, and **Axios**, communicating with the Django backend for profile management.
 
+### Assignment Page
+![Assignment Page](./assignment.png)
+
+- **Purpose:**  
+  Displays all existing assignments in a structured dashboard view, allowing users to search, filter, sort, and — for administrators — create new assignments.
+
+- **Workflow:**
+  1. Upon login, users are directed to the **Assignment Page**, which lists all assignments as interactive cards.  
+  2. Users can **Search** assignments by name using the search bar.  
+  3. **Filter** options allow users to display:
+     - Completed assignments  
+     - Incomplete assignments  
+     - All assignments  
+  4. **Sort** options enable users to order assignments by:
+     - **A → Z** (alphabetically ascending)  
+     - **Z → A** (alphabetically descending)  
+     - **Newest First** (recently created)  
+     - **Oldest First** (earliest created)  
+  5. Administrators can click the **“+” card** to create a new assignment directly from this page.  
+  6. Each assignment card is **clickable** — selecting a card opens the **Assignment Detail View**,  
+     where users can see all assignment information including the title, description, rubric,  
+     submission progress, and marking analytics.
+
+- **Features:**
+  - Interactive assignment cards showing title, due date, and completion status.  
+  - Real-time search, filtering, and sorting without page reload.  
+  - Clickable cards linking to detailed assignment information.  
+  - Role-based access: only administrators can create, edit, or delete assignments.  
+  - Responsive layout that adapts across different screen sizes.  
+
+- **Technology Stack:**  
+  Built with **React**, **Material UI**, and **Axios** for frontend logic;  
+  integrated with the **Django REST API** for fetching, filtering, and managing assignment data.
+
 
 ## Testing
 
