@@ -256,6 +256,27 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
 - **Technology Stack:**  
   Implemented using **React**, **Material UI**, and **Axios** for API communication.
 
+### 🧾 Sign-Up Page
+![Sign-Up Page](./sign_up.png)
+
+- **Purpose:**  
+  Enables new users to register for the Assignment Moderation Tool by providing their personal information and creating secure credentials.
+
+- **Workflow:**
+  1. The user enters a **Username**, **Email**, **Password**, and **Confirm Password**.  
+  2. Clicking **“Sign Up”** sends the registration data to the backend for validation.  
+  3. If successful, the user is redirected to the **Login Page** to sign in.  
+
+- **Features:**
+  - Input validation for required fields (empty fields trigger inline error messages).  
+  - Password confirmation check to ensure both entries match.  
+  - Displays error messages if an email is already registered or input is invalid.  
+  - **“Already a user? Login here.”** link redirects to the login page.  
+  - Backend automatically handles role assignment (Professor or Tutor) upon account creation.  
+
+- **Technology Stack:**  
+  Implemented using **React**, **Material UI**, and **Axios** for REST API communication with the Django backend.
+
 ## Testing
 
 ```bash
