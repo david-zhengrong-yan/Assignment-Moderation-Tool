@@ -231,6 +231,31 @@ backend/
 
 ---
 
+## User Interface Overview
+
+Below are the main pages implemented in the Assignment Moderation Tool frontend.  
+Each page is designed using **React + MUI**, ensuring a consistent and responsive user experience.
+
+---
+
+### Login Page
+![Login Page](./login.png)
+
+- **Purpose:** Allows users (professors and tutors) to securely log in to the system using their registered email and password.  
+- **Workflow:**
+  1. The user enters their **email** and **password**.  
+  2. Clicking the **“Login”** button sends the credentials to the backend for authentication.  
+  3. If valid, the system redirects the user to the **Assignments Page** based on their role.  
+
+- **Features:**
+  - Password visibility toggle for convenience.  
+  - **“Forgot password?”** link enables users to reset their password via email.  
+  - **“Not a user? Sign up here.”** link allows new users to create an account.  
+  - Handles invalid login attempts with error prompts.  
+
+- **Technology Stack:**  
+  Implemented using **React**, **Material UI**, and **Axios** for API communication.
+
 ## Testing
 
 ```bash
