@@ -333,6 +333,34 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   Built with **React**, **Material UI**, and **Axios** for frontend logic;  
   integrated with the **Django REST API** for fetching, filtering, and managing assignment data.
 
+### Assignment Detail / Analysis Page (Administrator View)
+![Assignment Analysis Page](./assignment_information.png)
+
+- **Purpose:**  
+  Provides professors (administrators) with a detailed view of each assignment after selecting it from the **Assignment Page**.  
+  This page summarizes tutor performance, displays consistency metrics, and allows file downloads for both the assignment and its rubric.
+
+- **Workflow:**
+  1. When an administrator clicks an assignment card on the **Assignment Page**, they are redirected to this **Detail / Analysis Page**.  
+  2. The page displays the assignment’s **Title**, **Description**, **Upload Date**, and **Rubric Information**.  
+  3. Administrators can **Download** both the **Assignment File** and **Rubric (.docx)** directly.  
+  4. The system aggregates tutor submissions and computes:
+     - The **Average Score** across all tutors.  
+     - The **Total Score** for each submission.  
+     - Comparative analysis between tutors’ marks.  
+  5. Detailed analytics show the variation and consistency between tutor evaluations.  
+  6. Administrators can review each submission’s result, download data, and export reports.
+
+- **Features:**
+  - Displays all uploaded files (assignment and rubric) with download buttons.  
+  - Shows statistical metrics including **Average Score** and **Total Score**.  
+  - Summarizes tutor grading performance using visual analytics and color-coded highlights.  
+  - Allows export or download of analysis results for moderation reporting.  
+  - Integrated with backend APIs for retrieving score data and computing consistency analytics.  
+
+- **Technology Stack:**  
+  Developed using **React**, **Material UI**, and **Axios** on the frontend,  
+  integrated with the **Django REST Framework** backend for real-time data retrieval, score calculation, and analytics visualization.
 
 ## Testing
 
