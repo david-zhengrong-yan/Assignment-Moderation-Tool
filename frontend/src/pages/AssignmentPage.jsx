@@ -24,6 +24,7 @@ import { DownloadIcon, EyeIcon } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useParams, useNavigate } from "react-router-dom";
 import { parseDocxToRubric } from "../utils/rubricDocx";
+import { getApiBaseUrl } from "../constants"
 
 // PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
@@ -231,25 +232,24 @@ export default function AssignmentPage() {
   const [rubric, setRubric] = useState(null);
 
   const navbarWidth = 200;
-  const API_BASE = "http://localhost:8000/api";
 
   useEffect(() => {
     async function fetchAssignment() {
       try {
-        const res = await fetch(`${API_BASE}/assignment/${assignmentId}`);
+        const res = await fetch(`${getApiBaseUrl()}/assignment/${assignmentId}`);
         if (!res.ok) throw new Error("Failed to fetch assignment");
         const data = await res.json();
 
         const assignmentData = {
           ...data.assignment,
-          downloadUrl: `${API_BASE}/assignment/${assignmentId}/download/`,
-          rubricDownloadUrl: `${API_BASE}/assignment/${assignmentId}/rubric/download/`,
+          downloadUrl: `${getApiBaseUrl()}/assignment/${assignmentId}/download/`,
+          rubricDownloadUrl: `${getApiBaseUrl()}/assignment/${assignmentId}/rubric/download/`,
         };
 
         let submissionsData = (data.submissions || []).map((sub, idx) => ({
           ...sub,
           index: idx + 1,
-          downloadUrl: `${API_BASE}/submission/${sub.id}/download/`,
+          downloadUrl: `${getApiBaseUrl()}/submission/${sub.id}/download/`,
           markersFinished: 0,
           averageScore: 0,
           totalMarkers: sub.totalMarkers || 0,
@@ -259,7 +259,7 @@ export default function AssignmentPage() {
         for (let i = 0; i < submissionsData.length; i++) {
           const sub = submissionsData[i];
           try {
-            const resMarks = await fetch(`${API_BASE}/submission/${sub.id}/marks`);
+            const resMarks = await fetch(`${getApiBaseUrl()}/submission/${sub.id}/marks`);
             if (!resMarks.ok) throw new Error("Failed to fetch marks");
             const marksData = (await resMarks.json()).marks || [];
             const finalizedMarks = marksData.filter((m) => m.isFinalized);
@@ -349,7 +349,7 @@ export default function AssignmentPage() {
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`${API_BASE}/assignment/${assignmentId}/delete/`, { method: "DELETE" });
+      const res = await fetch(`${getApiBaseUrl()}/assignment/${assignmentId}/delete/`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete assignment");
       navigate(`/${userId}/home`, { replace: true });
     } catch (err) {

@@ -26,6 +26,7 @@ import Navbar from "../components/Navbar";
 import { parseDocxToRubric } from "../utils/rubricDocx";
 import RubricEditor from "../components/RubricEditor";
 import { useNavigate, useParams } from "react-router-dom";
+import { getApiBaseUrl } from "../constants"
 
 const LEFT_NAV_WIDTH = 200;
 
@@ -75,7 +76,7 @@ export default function EditAssignmentPage() {
   React.useEffect(() => {
     const fetchAssignment = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/assignment/${assignmentId}`, {
+        const res = await fetch(`${getApiBaseUrl()}/api/assignment/${assignmentId}`, {
           headers: { "X-Session-ID": sessionid },
           credentials: "include",
         });
@@ -203,7 +204,7 @@ export default function EditAssignmentPage() {
         formData.append(`submissions[${idx}][admin_marks]`, JSON.stringify(s.marks));
       });
 
-      const res = await fetch(`http://localhost:8000/api/assignment/${assignmentId}/edit`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/assignment/${assignmentId}/edit`, {
         method: "POST",
         headers: { "X-Session-ID": sessionid },
         credentials: "include",

@@ -20,6 +20,7 @@ import {
 import Navbar from "../components/Navbar";
 import { useParams, useNavigate } from "react-router";
 import { parseDocxToRubric } from "../utils/rubricDocx"; // adjust import path
+import { getApiBaseUrl } from "../constants"
 
 export default function MarkerPage() {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ export default function MarkerPage() {
     const fetchAssignment = async () => {
       try {
         const res = await fetch(
-          `http://localhost:8000/api/marker/assignment/${assignmentId}`
+          `${getApiBaseUrl()}/api/marker/assignment/${assignmentId}`
         );
         const data = await res.json();
         setAssignment(data);
@@ -56,7 +57,7 @@ export default function MarkerPage() {
     const fetchRubric = async () => {
       try {
         const res = await fetch(
-          `http://localhost:8000/api/assignment/${assignmentId}/rubric/download`
+          `${getApiBaseUrl()}/api/assignment/${assignmentId}/rubric/download`
         );
         const blob = await res.blob();
         const file = new File([blob], "rubric.docx", { type: blob.type });
@@ -114,7 +115,7 @@ export default function MarkerPage() {
             variant="outlined"
             onClick={() =>
               downloadFile(
-                `http://localhost:8000/api/assignment/${assignmentId}/download/`,
+                `${getApiBaseUrl()}/api/assignment/${assignmentId}/download/`,
                 "assignment.pdf"
               )
             }
@@ -130,7 +131,7 @@ export default function MarkerPage() {
             variant="outlined"
             onClick={() =>
               downloadFile(
-                `http://localhost:8000/api/assignment/${assignmentId}/rubric/download/`,
+                `${getApiBaseUrl()}/api/assignment/${assignmentId}/rubric/download/`,
                 "rubric.docx"
               )
             }
@@ -205,7 +206,7 @@ export default function MarkerPage() {
                   sx={{ ml: 1 }}
                   onClick={() =>
                     downloadFile(
-                      `http://localhost:8000/api/submission/${submission.id}/download/`,
+                      `${getApiBaseUrl()}/api/submission/${submission.id}/download/`,
                       `${submission.name}.pdf`
                     )
                   }

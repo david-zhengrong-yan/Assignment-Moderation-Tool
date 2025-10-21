@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import Navbar from "../components/Navbar";
 import { useParams, useNavigate } from "react-router-dom";
+import { getApiBaseUrl } from "../constants"
 
 export default function HomePage() {
   const sessionid = localStorage.getItem("sessionid");
@@ -60,7 +61,7 @@ export default function HomePage() {
         setLoading(true);
 
         // User
-        const userRes = await fetch(`http://localhost:8000/api/${userId}/account`, {
+        const userRes = await fetch(`${getApiBaseUrl()}/api/${userId}/account`, {
           headers: { "X-Session-ID": sessionid },
           credentials: "include",
         });
@@ -70,7 +71,7 @@ export default function HomePage() {
 
         // Assignments
         const assignmentsRes = await fetch(
-          `http://localhost:8000/api/${userId}/assignments`,
+          `${getApiBaseUrl()}/api/${userId}/assignments`,
           {
             headers: { "X-Session-ID": sessionid },
             credentials: "include",

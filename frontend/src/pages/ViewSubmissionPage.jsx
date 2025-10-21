@@ -21,6 +21,7 @@ import {
 } from "@mui/material";
 import Navbar from "../components/Navbar";
 import { useParams } from "react-router";
+import { getApiBaseUrl } from "../constants"
 
 const LEFT_NAV_WIDTH = 200;
 const ABS_THRESHOLD = 2;
@@ -39,7 +40,7 @@ export default function ViewSubmissionPage() {
     const fetchData = async () => {
       try {
         const res = await fetch(
-          `http://localhost:8000/api/assignment/${assignmentId}/submission/${submissionId}/marks`,
+          `${getApiBaseUrl()}/api/assignment/${assignmentId}/submission/${submissionId}/marks`,
           { headers: { "X-Session-ID": localStorage.getItem("sessionid") } }
         );
         const data = await res.json();

@@ -4,6 +4,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import EventIcon from "@mui/icons-material/Event";
 import DoneIcon from "@mui/icons-material/Done";
 import { useNavigate, useParams } from "react-router-dom";
+import { getApiBaseUrl } from "../constants"
 
 import Navbar from "../components/Navbar";
 
@@ -22,7 +23,7 @@ export default function AccountPage() {
   useEffect(() => {
     const fetchAccount = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/${userId}/account`, {
+        const res = await fetch(`${getApiBaseUrl()}/api/${userId}/account`, {
           method: "GET",
           headers: { "X-Session-ID": sessionid },
           credentials: "include",

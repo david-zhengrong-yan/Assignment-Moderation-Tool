@@ -26,6 +26,7 @@ import Navbar from "../components/Navbar";
 import { parseDocxToRubric } from "../utils/rubricDocx";
 import RubricEditor from "../components/RubricEditor";
 import { useNavigate, useParams } from "react-router-dom";
+import { getApiBaseUrl } from "../constants"
 
 const LEFT_NAV_WIDTH = 200;
 
@@ -176,7 +177,7 @@ export default function CreateAssignmentPage() {
       });
 
       // 3. Send request to Django backend
-      const res = await fetch("http://localhost:8000/api/assignment/create", {
+      const res = await fetch(`${getApiBaseUrl()}/api/assignment/create`, {
         method: "POST",
         headers: { "X-Session-ID": sessionid },
         credentials: "include",

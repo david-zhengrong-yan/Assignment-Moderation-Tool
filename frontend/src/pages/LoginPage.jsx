@@ -15,6 +15,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useNavigate, useLocation, Link as RouterLink } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
+import { getApiBaseUrl } from "../constants"
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const response = await fetch("http://localhost:8000/api/login", {
+    const response = await fetch(`${getApiBaseUrl()}/api/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials : "include",

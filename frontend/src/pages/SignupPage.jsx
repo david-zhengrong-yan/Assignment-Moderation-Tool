@@ -14,6 +14,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
+import { getApiBaseUrl } from "../constants"
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -52,7 +53,7 @@ export default function SignupPage() {
     const signupData = { username, email, password };
 
     try {
-      const response = await fetch("http://localhost:8000/api/signup", {
+      const response = await fetch(`${getApiBaseUrl()}/api/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

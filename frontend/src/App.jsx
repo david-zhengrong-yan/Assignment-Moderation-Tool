@@ -6,7 +6,6 @@ import { Route, Routes } from "react-router";
 import SignupPage from "./pages/SignupPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
-import PeoplePage from "./pages/PeoplePage";
 import AccountPage from "./pages/AccountPage";
 import EditAccountPage from "./pages/EditAccountPage";
 import AssignmentPage from "./pages/AssignmentPage";
@@ -23,7 +22,6 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/:userId/home" element={<HomePage />} />
-        <Route path="/peoples" element={<PeoplePage />} />
         <Route path="/:userId/account" element={<AccountPage />} />
         <Route path="/:userId/account/edit" element={<EditAccountPage />} />
         <Route path="/:userId/assignment/:assignmentId" element={<AssignmentPage />} />

@@ -13,6 +13,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import Navbar from "../components/Navbar";
 import { useNavigate, useParams } from "react-router-dom";
+import { getApiBaseUrl } from "../constants"
 
 export default function EditAccountPage() {
   const sessionid = localStorage.getItem("sessionid");
@@ -65,7 +66,7 @@ export default function EditAccountPage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetchWithAuth(`http://localhost:8000/api/${userId}/account`);
+        const res = await fetchWithAuth(`${getApiBaseUrl()}/api/${userId}/account`);
         if (!res) return;
         if (!res.ok) throw new Error("Failed to fetch user data");
         const data = await res.json();
@@ -89,7 +90,7 @@ export default function EditAccountPage() {
           setPreview(
             data.profilePicture.startsWith("http")
               ? data.profilePicture
-              : `http://localhost:8000${data.profilePicture}`
+              : `${getApiBaseUrl()}${data.profilePicture}`
           );
         }
       } catch (err) {
@@ -187,7 +188,7 @@ export default function EditAccountPage() {
       }
 
       const res = await fetchWithAuth(
-        `http://localhost:8000/api/${userId}/account/edit`,
+        `${getApiBaseUrl()}/api/${userId}/account/edit`,
         {
           method: "POST",
           body: formData,

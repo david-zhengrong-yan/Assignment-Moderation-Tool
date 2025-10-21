@@ -20,6 +20,7 @@ import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import ZoomOutIcon from "@mui/icons-material/ZoomOut";
 import FitScreenIcon from "@mui/icons-material/FitScreen";
+import { getApiBaseUrl } from "../constants"
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -47,7 +48,7 @@ function PDFViewer({ submissionId }) {
     const fetchPdf = async () => {
       try {
         const res = await fetch(
-          `http://localhost:8000/api/submissions/${submissionId}/pdf/`,
+          `${getApiBaseUrl()}/api/submissions/${submissionId}/pdf/`,
           { method: "GET", headers: { "X-Session-ID": localStorage.getItem("sessionid") } }
         );
         if (!res.ok) throw new Error("Failed to fetch PDF");
@@ -282,7 +283,7 @@ export default function MarkingPage() {
     const fetchData = async () => {
       try {
         const res = await fetch(
-          `http://localhost:8000/api/${userId}/assignment/${assignmentId}/submission/${submissionId}/mark`,
+          `${getApiBaseUrl()}/api/${userId}/assignment/${assignmentId}/submission/${submissionId}/mark`,
           { headers: { "X-Session-ID": localStorage.getItem("sessionid") } }
         );
         const data = await res.json();
@@ -317,7 +318,7 @@ export default function MarkingPage() {
     autoSaveTimer.current = setTimeout(async () => {
       try {
         const res = await fetch(
-          `http://localhost:8000/api/${userId}/assignment/${assignmentId}/submission/${submissionId}/mark`,
+          `${getApiBaseUrl()}/api/${userId}/assignment/${assignmentId}/submission/${submissionId}/mark`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json", "X-Session-ID": localStorage.getItem("sessionid") },
@@ -342,7 +343,7 @@ export default function MarkingPage() {
 
     try {
       const res = await fetch(
-        `http://localhost:8000/api/${userId}/assignment/${assignmentId}/submission/${submissionId}/mark`,
+        `${getApiBaseUrl()}/api/${userId}/assignment/${assignmentId}/submission/${submissionId}/mark`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-Session-ID": localStorage.getItem("sessionid") },

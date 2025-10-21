@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import { getApiBaseUrl } from "../constants"
 
 export default function NotFoundPage() {
   const sessionid = localStorage.getItem("sessionid")
@@ -13,7 +14,7 @@ export default function NotFoundPage() {
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
-        const response = await fetch("http://localhost:8000/api/login_status", {
+        const response = await fetch(`${getApiBaseUrl()}/api/login_status`, {
           method: "GET",
           headers: {"X-Session-ID": sessionid},
           credentials: "include", // Important: send sessionid cookie
@@ -23,6 +24,7 @@ export default function NotFoundPage() {
           const data = await response.json();
           if (data.successful) {
             setIsLoggedIn(true); // user is logged in
+            navigate(`/${data.id}/home`);
           } else {
             navigate("/login", { replace: true }); // not logged in
           }
