@@ -5,6 +5,5 @@ djangorestframework
 black
 pylint
 python-dotenv
-mysqlclient
 pymysql
 cryptography
