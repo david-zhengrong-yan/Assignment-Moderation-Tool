@@ -239,7 +239,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
 ---
 
 ### Login Page
-![Login Page](./login.png)
+![Login Page](./images/login.png)
 
 - **Purpose:** Allows users (professors and tutors) to securely log in to the system using their registered email and password.  
 - **Workflow:**
@@ -257,7 +257,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   Implemented using **React**, **Material UI**, and **Axios** for API communication.
 
 ### Sign-Up Page
-![Sign-Up Page](./sign_up.png)
+![Sign-Up Page](./images/sign_up.png)
 
 - **Purpose:**  
   Enables new users to register for the Assignment Moderation Tool by providing their personal information and creating secure credentials.
@@ -278,7 +278,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   Implemented using **React**, **Material UI**, and **Axios** for REST API communication with the Django backend.
 
 ### Edit Account Page
-![Edit Account Page](./edit_account.png)
+![Edit Account Page](./images/edit_account.png)
 
 - **Purpose:**  
   Allows users to manage and update their personal information, including username, email, password, and profile picture.
@@ -300,7 +300,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   Built with **React**, **Material UI**, and **Axios**, communicating with the Django backend for profile management.
 
 ### Assignment Page
-![Assignment Page](./assignment.png)
+![Assignment Page](./images/assignment.png)
 
 - **Purpose:**  
   Displays all existing assignments in a structured dashboard view, allowing users to search, filter, sort, and — for administrators — create new assignments.
@@ -334,7 +334,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   integrated with the **Django REST API** for fetching, filtering, and managing assignment data.
 
 ### Assignment Detail / Analysis Page (Administrator View)
-![Assignment Analysis Page](./assignment_information.png)
+![Assignment Analysis Page](./images/assignment_information.png)
 
 - **Purpose:**  
   Provides professors (administrators) with a detailed view of each assignment after selecting it from the **Assignment Page**.  
