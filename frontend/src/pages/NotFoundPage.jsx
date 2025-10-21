@@ -17,7 +17,7 @@ export default function NotFoundPage() {
         const response = await fetch(`${getApiBaseUrl()}/api/login_status`, {
           method: "GET",
           headers: {"X-Session-ID": sessionid},
-          credentials: "include", // Important: send sessionid cookie
+          credentials: "omit", // Important: send sessionid cookie
         });
 
         if (response.ok) {

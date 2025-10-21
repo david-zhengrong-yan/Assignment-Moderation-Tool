@@ -63,7 +63,7 @@ export default function HomePage() {
         // User
         const userRes = await fetch(`${getApiBaseUrl()}/api/${userId}/account`, {
           headers: { "X-Session-ID": sessionid },
-          credentials: "include",
+          credentials: "omit",
         });
         if (!userRes.ok) throw new Error("Failed to fetch user info");
         const userData = await userRes.json();
@@ -74,7 +74,7 @@ export default function HomePage() {
           `${getApiBaseUrl()}/api/${userId}/assignments`,
           {
             headers: { "X-Session-ID": sessionid },
-            credentials: "include",
+            credentials: "omit",
           }
         );
         if (!assignmentsRes.ok) throw new Error("Failed to fetch assignments");

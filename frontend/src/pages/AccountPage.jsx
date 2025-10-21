@@ -26,7 +26,7 @@ export default function AccountPage() {
         const res = await fetch(`${getApiBaseUrl()}/api/${userId}/account`, {
           method: "GET",
           headers: { "X-Session-ID": sessionid },
-          credentials: "include",
+          credentials: "omit",
         });
 
         if (res.status === 401) {

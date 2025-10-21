@@ -180,7 +180,7 @@ export default function CreateAssignmentPage() {
       const res = await fetch(`${getApiBaseUrl()}/api/assignment/create`, {
         method: "POST",
         headers: { "X-Session-ID": sessionid },
-        credentials: "include",
+        credentials: "omit",
         body: formData,
       });
 

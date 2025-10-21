@@ -33,7 +33,7 @@ export default function LoginPage() {
     const response = await fetch(`${getApiBaseUrl()}/api/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials : "include",
+      credentials : "omit",
       body: JSON.stringify({ email, password }),
     });
     const data = await response.json();

@@ -56,7 +56,7 @@ export default function SignupPage() {
       const response = await fetch(`${getApiBaseUrl()}/api/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        credentials: "omit",
         body: JSON.stringify(signupData),
       });
       const data = await response.json();

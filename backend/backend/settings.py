@@ -69,6 +69,9 @@ SESSION_COOKIE_SECURE = False      # set True if using HTTPS
 CSRF_COOKIE_SECURE = False
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "X-Session-ID",  # add your custom header here
+    "content-type",
+    "authorization",
+    "x-csrftoken",
 ]
 
 CORS_ALLOWED_ORIGINS = [

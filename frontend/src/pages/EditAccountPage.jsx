@@ -52,7 +52,7 @@ export default function EditAccountPage() {
         ...(options.headers || {}),
         "X-Session-ID": sessionid,
       },
-      credentials: "include",
+      credentials: "omit",
     });
 
     if (res.status === 401) {

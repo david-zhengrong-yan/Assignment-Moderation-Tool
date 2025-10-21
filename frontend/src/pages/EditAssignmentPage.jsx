@@ -78,7 +78,7 @@ export default function EditAssignmentPage() {
       try {
         const res = await fetch(`${getApiBaseUrl()}/api/assignment/${assignmentId}`, {
           headers: { "X-Session-ID": sessionid },
-          credentials: "include",
+          credentials: "omit",
         });
         if (!res.ok) throw new Error("Failed to fetch assignment");
         const data = await res.json();
@@ -207,7 +207,7 @@ export default function EditAssignmentPage() {
       const res = await fetch(`${getApiBaseUrl()}/api/assignment/${assignmentId}/edit`, {
         method: "POST",
         headers: { "X-Session-ID": sessionid },
-        credentials: "include",
+        credentials: "omit",
         body: formData,
       });
 
