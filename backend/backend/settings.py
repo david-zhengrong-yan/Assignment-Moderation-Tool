@@ -74,13 +74,13 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-csrftoken",
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # your React dev server
-    "http://127.0.0.1:5173",  # optional
-    "http://localhost:8000",  # your React dev server
-    "http://127.0.0.1:8000",  # optional
-    "https://68d69d40-72ab-4896-bc17-b3c190219391-dev.e1-us-east-azure.choreoapis.dev", # deploy
-]
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:5173",  # your React dev server
+#     "http://127.0.0.1:5173",  # optional
+#     "http://localhost:8000",  # your React dev server
+#     "http://127.0.0.1:8000",  # optional
+#     "https://68d69d40-72ab-4896-bc17-b3c190219391-dev.e1-us-east-azure.choreoapis.dev", # deploy
+# ]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",  # your React dev server
@@ -93,6 +93,9 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 ROOT_URLCONF = 'backend.urls'
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 
 TEMPLATES = [
     {
@@ -116,18 +119,18 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv("DB_NAME"),
-        'USER': os.getenv("DB_USER"),
-        'PASSWORD': os.getenv("DB_PWD"),
-        'HOST': os.getenv("DB_HOST"),
-        'PORT': os.getenv("DB_PORT"),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'NAME': os.getenv("DB_NAME"),
+    #     'USER': os.getenv("DB_USER"),
+    #     'PASSWORD': os.getenv("DB_PWD"),
+    #     'HOST': os.getenv("DB_HOST"),
+    #     'PORT': os.getenv("DB_PORT"),
+    # }
 }
 
 

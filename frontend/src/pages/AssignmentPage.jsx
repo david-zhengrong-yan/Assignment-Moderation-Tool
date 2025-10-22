@@ -236,20 +236,20 @@ export default function AssignmentPage() {
   useEffect(() => {
     async function fetchAssignment() {
       try {
-        const res = await fetch(`${getApiBaseUrl()}/assignment/${assignmentId}`);
+        const res = await fetch(`${getApiBaseUrl()}/api/assignment/${assignmentId}`);
         if (!res.ok) throw new Error("Failed to fetch assignment");
         const data = await res.json();
 
         const assignmentData = {
           ...data.assignment,
-          downloadUrl: `${getApiBaseUrl()}/assignment/${assignmentId}/download/`,
-          rubricDownloadUrl: `${getApiBaseUrl()}/assignment/${assignmentId}/rubric/download/`,
+          downloadUrl: `${getApiBaseUrl()}/api/assignment/${assignmentId}/download/`,
+          rubricDownloadUrl: `${getApiBaseUrl()}/api/assignment/${assignmentId}/rubric/download/`,
         };
 
         let submissionsData = (data.submissions || []).map((sub, idx) => ({
           ...sub,
           index: idx + 1,
-          downloadUrl: `${getApiBaseUrl()}/submission/${sub.id}/download/`,
+          downloadUrl: `${getApiBaseUrl()}/api/submission/${sub.id}/download/`,
           markersFinished: 0,
           averageScore: 0,
           totalMarkers: sub.totalMarkers || 0,
@@ -259,7 +259,7 @@ export default function AssignmentPage() {
         for (let i = 0; i < submissionsData.length; i++) {
           const sub = submissionsData[i];
           try {
-            const resMarks = await fetch(`${getApiBaseUrl()}/submission/${sub.id}/marks`);
+            const resMarks = await fetch(`${getApiBaseUrl()}/api/submission/${sub.id}/marks`);
             if (!resMarks.ok) throw new Error("Failed to fetch marks");
             const marksData = (await resMarks.json()).marks || [];
             const finalizedMarks = marksData.filter((m) => m.isFinalized);
@@ -349,7 +349,7 @@ export default function AssignmentPage() {
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/assignment/${assignmentId}/delete/`, { method: "DELETE" });
+      const res = await fetch(`${getApiBaseUrl()}/api/assignment/${assignmentId}/delete`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete assignment");
       navigate(`/${userId}/home`, { replace: true });
     } catch (err) {

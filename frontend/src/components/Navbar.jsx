@@ -29,7 +29,6 @@ export default function Navbar() {
   const menuItems = [
     { text: "Home", path: `/${userId}/home` },
     { text: "Account", path: `/${userId}/account` },
-    { text: "People", path: "/peoples" },
     { text: "Logout", path: "#", onClick: handleLogout } // Use onClick
   ];
 
