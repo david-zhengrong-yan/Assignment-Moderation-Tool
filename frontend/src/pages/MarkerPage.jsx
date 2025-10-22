@@ -38,7 +38,7 @@ export default function MarkerPage() {
     const fetchAssignment = async () => {
       try {
         const res = await fetch(
-          `${getApiBaseUrl()}/api/marker/assignment/${assignmentId}`
+          `${getApiBaseUrl()}/api/${userId}/marker/assignment/${assignmentId}`
         );
         const data = await res.json();
         setAssignment(data);
@@ -87,6 +87,8 @@ export default function MarkerPage() {
     link.download = filename;
     link.click();
   };
+
+  console.log(assignment);
 
   return (
     <>

@@ -586,9 +586,19 @@ def create_assignment_view(request):
             {"successful": False, "message": "User is not logged in"},
             status=401
         )
+    
+    try:
+        session = Session.objects.get(session_key=sessionid)
+        uid = session.get_decoded().get("_auth_user_id")
+        user = User.objects.get(pk=uid)
+    except (Session.DoesNotExist, User.DoesNotExist):
+        return JsonResponse(
+            {"successful": False, "message": "Invalid session"},
+            status=401
+        )
 
-    administrator = request.user
-    if not administrator.is_authenticated or administrator.role != "admin":
+    administrator = user
+    if administrator.role != "admin":
         return JsonResponse({"error": "Only administrators can create assignments"}, status=403)
 
     # Parse submissions
@@ -629,12 +639,12 @@ def create_assignment_view(request):
 
 @require_GET
 @csrf_exempt
-def assignment_detail_view(request, id):
+def assignment_detail_view(request, assignment_id):
     """
     Return a single assignment with submissions, admin marks, and markers info.
     """
     try:
-        assignment = Assignment.objects.get(id=id)
+        assignment = Assignment.objects.get(id=assignment_id)
     except Assignment.DoesNotExist:
         raise Http404("Assignment not found")
 
@@ -795,7 +805,7 @@ def edit_assignment_view(request, id):
 
 
 @require_GET
-def marker_assignment_detail_view(request, assignment_id):
+def marker_assignment_detail_view(request, assignment_id, user_id):
     """
     Return assignment details, including submissions and related marks.
     """
@@ -803,10 +813,21 @@ def marker_assignment_detail_view(request, assignment_id):
 
     submissions_data = []
     submissions = Submission.objects.filter(assignment=assignment)
+    
+    try:
+        marker =  User.objects.get(id=user_id)
+    except Exception as e:
+        return JsonResponse(
+            {"successful": False, "message": "Submission not found"},
+            status=404
+        )
+    
+    print(marker.email)
 
     for submission in submissions:
         # Get marks for this submission
         marks = Mark.objects.filter(submission=submission).select_related("marker")
+        
         marks_data = [
             {
                 "id": mark.id,
@@ -814,8 +835,10 @@ def marker_assignment_detail_view(request, assignment_id):
                 "is_finalized": mark.is_finalized,
                 "marker": mark.marker.email
             }
-            for mark in marks
+            for mark in marks if mark.marker.email == marker.email
         ]
+
+        
 
         submissions_data.append({
             "id": submission.id,

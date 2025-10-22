@@ -131,7 +131,7 @@ function SubmissionCard({ submission, downloadFile, onViewDetails }) {
         </Card>
 
         {/* Average Score */}
-        <Card
+        {/* <Card
           sx={{
             p: 2,
             width: 180,
@@ -144,7 +144,7 @@ function SubmissionCard({ submission, downloadFile, onViewDetails }) {
         >
           <CustomCircularProgress percent={averagePercent} label={submission.averageScore.toFixed(1)} />
           <Typography sx={{ mt: 1, fontSize: "0.85rem", textAlign: "center" }}>Current Average</Typography>
-        </Card>
+        </Card> */}
 
         {/* Download Submission */}
         <Card sx={{ p: 0, width: 180, height: 180 }}>
@@ -239,6 +239,8 @@ export default function AssignmentPage() {
         const res = await fetch(`${getApiBaseUrl()}/api/assignment/${assignmentId}`);
         if (!res.ok) throw new Error("Failed to fetch assignment");
         const data = await res.json();
+
+        console.log(data);
 
         const assignmentData = {
           ...data.assignment,
