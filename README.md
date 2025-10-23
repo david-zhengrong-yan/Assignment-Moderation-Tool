@@ -48,12 +48,12 @@ that streamlines the entire moderation process — from assignment upload to tut
 ---
 
 ## System Architecture
-![System Architecture](./System%20Architecture.png)
+![System Architecture](./images/System%20Architecture.png)
 
 ---
 
 ##  Data Flow
-![Data Flow](./Data%20Flow.png)
+![Data Flow](./images/Data%20Flow.png)
 
 ---
 
@@ -73,12 +73,12 @@ that streamlines the entire moderation process — from assignment upload to tut
 ## Folder Structure
 
 ### Frontend (`frontend/`)
-![Frontend](./Frontend.png)
+![Frontend](./images/Frontend.png)
 
 ---
 
 ### Backend (`backend/`)
-![Backend](./Backend.png)
+![Backend](./images/Backend.png)
 
 ---
 
