@@ -1,5 +1,5 @@
 import React from "react";
-import { AppBar, Toolbar, Box, Link, Typography } from "@mui/material";
+import { AppBar, Toolbar, Link, Typography } from "@mui/material";
 import { Link as RouterLink } from "react-router";
 
 // Export height constant

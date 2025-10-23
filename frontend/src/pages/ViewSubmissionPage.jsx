@@ -228,7 +228,7 @@ export default function ViewSubmissionPage() {
               <Box sx={{ mt: 2, fontSize: 12, color: "text.secondary" }}>
                 <div>Note: <span style={{ background: "#FDE2E1", padding: "0 6px" }}>Red highlight</span> = higher than Administrator’s mark.</div>
                 <div><span style={{ background: "#FFF7D6", padding: "0 6px" }}>Yellow highlight</span> = lower than Administrator’s mark.</div>
-                <div>Non-finalized markers are shown with "(Not Finalized)" in the column header.</div>
+                <div>Non-finalized markers are shown with &quot;(Not Finalized)&quot; in the column header.</div>
               </Box>
             </Box>
           </Paper>

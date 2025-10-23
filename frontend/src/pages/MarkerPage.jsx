@@ -239,7 +239,7 @@ export default function MarkerPage() {
           <Dialog open={feedbackOpen} onClose={handleFeedbackClose}>
             <DialogContent>
               <DialogContentText>
-                Feedback Already Sent to Student's Email.
+                Feedback Already Sent to Student&apos;s Email.
               </DialogContentText>
             </DialogContent>
             <DialogActions>
