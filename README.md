@@ -48,38 +48,7 @@ that streamlines the entire moderation process — from assignment upload to tut
 ---
 
 ## System Architecture
-
-                ┌────────────────────────────┐
-                │        Professor           │
-                │ Uploads Assignments &      │
-                │ Rubric (.docx) Files       │
-                └────────────┬───────────────┘
-                               │
-                               ▼
-            ┌──────────────────────────────────┐
-            │           Frontend (React)        │
-            │ React + Vite + Material UI + Axios│
-            │ - Login / Signup Pages            │
-            │ - Tutor Marking Interface         │
-            │ - Professor Dashboard             │
-            │ - Analytics & Reports             │
-            └────────────┬──────────────────────┘
-                          │ RESTful API Calls
-                          ▼
-     ┌──────────────────────────────────────────────┐
-     │               Django Backend                 │
-     │ Django REST Framework + SQLite               │
-     │ - User & Role Management                     │
-     │ - Assignment & Rubric Storage                │
-     │ - Tutor Marks & Analytics                    │
-     │ - Automated Comparison & Feedback            │
-     └──────────────┬──────────────────────────────┘
-                    │ ORM
-                    ▼
-           ┌─────────────────────────────┐
-           │     SQLite / PostgreSQL      │
-           │ Users, Assignments, Marks    │
-           └─────────────────────────────┘
+![System Architecture](./System Architecture.png)
 
 ---
 
