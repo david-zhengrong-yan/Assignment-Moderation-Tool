@@ -48,41 +48,13 @@ that streamlines the entire moderation process — from assignment upload to tut
 ---
 
 ## System Architecture
-![System Architecture](./System Architecture.png)
+![System Architecture](./System%20Architecture.png)
 
 ---
 
 ##  Data Flow
+![Data Flow](./Data%20Flow.png)
 
-```pgsql
-┌───────────────────────────────────────────────┐
-│ Professor uploads Rubric (.docx)              │
-└───────────────────────────────────────────────┘
-                     │
-                     ▼
-┌───────────────────────────────────────────────┐
-│ System parses rubric into JSON using Mammoth.js│
-└───────────────────────────────────────────────┘
-                     │
-                     ▼
-┌───────────────────────────────────────────────┐
-│ All tutors log in and mark the same           │
-│ assignments online                            │
-└───────────────────────────────────────────────┘
-                     │
-                     ▼
-┌───────────────────────────────────────────────┐
-│ Backend aggregates results, compares marks,   │
-│ highlights deviations and averages            │
-└───────────────────────────────────────────────┘
-                     │
-                     ▼
-┌───────────────────────────────────────────────┐
-│ Professor views analytics and consistency     │
-│ reports                                       │
-└───────────────────────────────────────────────┘
-
-```
 ---
 
 ## Technology Stack
@@ -101,79 +73,12 @@ that streamlines the entire moderation process — from assignment upload to tut
 ## Folder Structure
 
 ### Frontend (`frontend/`)
-
-```pgsql
-frontend/
-│
-├── public/
-│ └── vite.svg
-│
-├── src/
-│ ├── assets/
-│ │ └── logo_deakin-rebrand-stacked.png
-│ │
-│ ├── components/
-│ │ ├── AuthLayout.jsx # Login/register layout
-│ │ ├── Navbar.jsx # Sidebar navigation
-│ │ ├── RubricEditor.jsx # Professor rubric editor
-│ │ └── Topbar.jsx # Top navigation bar
-│ │
-│ ├── pages/
-│ │ ├── HomePage.jsx # Professor dashboard
-│ │ ├── LoginPage.jsx # Login page
-│ │ ├── SignupPage.jsx # Signup page
-│ │ ├── CreateAssignmentPage.jsx # Upload assignment & rubric
-│ │ ├── AssignmentPage.jsx # View assignment details
-│ │ ├── MarkingPage.jsx # Tutor marking page
-│ │ ├── ViewSubmissionPage.jsx # Professor compares tutors’ marks
-│ │ ├── EditAssignmentPage.jsx # Edit rubric
-│ │ ├── AccountPage.jsx / EditAccountPage.jsx # User account pages
-│ │ ├── PeoplePage.jsx # Tutor list
-│ │ ├── MarkerPage.jsx # Tutor marking overview
-│ │ └── NotFoundPage.jsx # 404 error page
-│ │
-│ ├── utils/
-│ │ └── rubricDocx.js # DOCX to JSON parser using Mammoth.js
-│ │
-│ ├── App.jsx / main.jsx # Routing and app entry point
-│ ├── App.css / index.css # Global styles
-│ └── vite.config.js # Build configuration
-```
+![Frontend](./Frontend.png)
 
 ---
 
 ### Backend (`backend/`)
-
-```pgsql
-backend/
-│
-├── api/
-│ ├── migrations/
-│ │ ├── 0001_initial.py
-│ │ ├── 0002_remove_user_staffid.py
-│ │ └── 0003_alter_user_role.py
-│ │
-│ ├── admin.py # Admin registration
-│ ├── apps.py # App registration
-│ ├── forms.py # Upload & validation forms
-│ ├── models.py # User, Assignment, Rubric, Mark models
-│ ├── views.py # API logic and analytics endpoints
-│ ├── urls.py # Route definitions
-│ ├── tests.py # Backend tests
-│ └── init.py
-│
-├── backend/
-│ ├── settings.py # Django configuration (CORS, email, media)
-│ ├── urls.py # Root router
-│ ├── asgi.py / wsgi.py
-│ └── init.py
-│
-├── media/ # Uploaded Rubrics, PDFs, Images
-│ ├── *.docx
-│ ├── *.jpeg / *.pdf
-│
-└── manage.py # Django entry point
-```
+![Backend](./Backend.png)
 
 ---
 
