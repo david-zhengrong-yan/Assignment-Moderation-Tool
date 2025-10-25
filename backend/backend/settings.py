@@ -35,7 +35,12 @@ SECRET_KEY = 'django-insecure-^^+n9%!u3)op6r)w%i60jq#4)l6fz%-*yst0qt=$-l!g5bs49e
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# settings.py
+ALLOWED_HOSTS = [
+    'assignment-moderation-tool.onrender.com',
+    '127.0.0.1',
+    'localhost',
+]
 
 
 # Application definition
@@ -83,7 +88,10 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 #     "http://localhost:8000",  # your React dev server
 #     "http://127.0.0.1:8000",  # optional
 #     "https://68d69d40-72ab-4896-bc17-b3c190219391-dev.e1-us-east-azure.choreoapis.dev", # deploy
+#     "https://assignment-moderation-tool.onrender.com",
 # ]
+
+
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",  # your React dev server
@@ -92,6 +100,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",  # optional
     "https://68d69d40-72ab-4896-bc17-b3c190219391-dev.e1-us-east-azure.choreoapis.dev/assignment-moderation/backend/v1.0", # deploy
     "https://68d69d40-72ab-4896-bc17-b3c190219391-dev.e1-us-east-azure.choreoapis.dev", # deploy
+    "https://assignment-moderation-tool.onrender.com",
 ]
 
 
