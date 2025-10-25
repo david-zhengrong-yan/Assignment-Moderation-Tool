@@ -82,14 +82,15 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-csrftoken",
 ]
 
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:5173",  # your React dev server
-#     "http://127.0.0.1:5173",  # optional
-#     "http://localhost:8000",  # your React dev server
-#     "http://127.0.0.1:8000",  # optional
-#     "https://68d69d40-72ab-4896-bc17-b3c190219391-dev.e1-us-east-azure.choreoapis.dev", # deploy
-#     "https://assignment-moderation-tool.onrender.com",
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # your React dev server
+    "http://127.0.0.1:5173",  # optional
+    "http://localhost:8000",  # your React dev server
+    "http://127.0.0.1:8000",  # optional
+    "https://68d69d40-72ab-4896-bc17-b3c190219391-dev.e1-us-east-azure.choreoapis.dev", # deploy
+    "https://assignment-moderation-tool.onrender.com",
+    "https://assignment-moderation.onrender.com",
+]
 
 
 
@@ -101,6 +102,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://68d69d40-72ab-4896-bc17-b3c190219391-dev.e1-us-east-azure.choreoapis.dev/assignment-moderation/backend/v1.0", # deploy
     "https://68d69d40-72ab-4896-bc17-b3c190219391-dev.e1-us-east-azure.choreoapis.dev", # deploy
     "https://assignment-moderation-tool.onrender.com",
+    "https://assignment-moderation.onrender.com",
 ]
 
 
