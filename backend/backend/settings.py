@@ -147,7 +147,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgresql://postgres:postgres@localhost:5432/mysite',
+        default='postgresql://db_zay4_user:16NE5FWZ4GkrBH3ID8R1GFXJ0zy5kz6W@dpg-d3u4n0euk2gs73dj8ns0-a.oregon-postgres.render.com/db_zay4',
         conn_max_age=600
     )
 }
