@@ -7,3 +7,8 @@ pylint
 python-dotenv
 pymysql
 cryptography
+psycopg2-binary
+dj-database-url
+whitenoise[brotli]
+gunicorn
+uvicorn
