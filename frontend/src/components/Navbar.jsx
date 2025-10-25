@@ -2,6 +2,7 @@ import * as React from "react";
 import { Box, Drawer, Avatar, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { getApiBaseUrl } from "../constants";
 
 export default function Navbar() {
   const { userId } = useParams();
@@ -9,7 +10,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/logout", {
+      const response = await fetch(`${getApiBaseUrl()}/api/logout`, {
         method: "POST",
         credentials: "include", // Include session cookies
         headers: { "Content-Type": "application/json" },
