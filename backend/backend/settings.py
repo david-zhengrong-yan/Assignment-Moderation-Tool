@@ -30,7 +30,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = 'django-insecure-^^+n9%!u3)op6r)w%i60jq#4)l6fz%-*yst0qt=$-l!g5bs49e'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -141,7 +141,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv('POSTGRESQL_URL'),
+        default='postgresql://db_zay4_user:16NE5FWZ4GkrBH3ID8R1GFXJ0zy5kz6W@dpg-d3u4n0euk2gs73dj8ns0-a.oregon-postgres.render.com/db_zay4',
         conn_max_age=600
     )
 }
