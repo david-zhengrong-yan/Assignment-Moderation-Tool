@@ -65,12 +65,18 @@ that streamlines the entire moderation process — from assignment upload to tut
 ---
 
 ## System Architecture
-![System Architecture](./images/System%20Architecture.png)
+
+<div align="center">
+  <img src="./images/System Architecture.png" alt="System Architecture.png" width="500px"/>
+</div>
 
 ---
 
 ##  Data Flow
-![Data Flow](./images/Data%20Flow.png)
+
+<div align="center">
+  <img src="./images/Data Flow.png" alt="Data Flow.png" width="500px"/>
+</div>
 
 ---
 
@@ -455,21 +461,234 @@ The project supports two databases:
 
 ## Testing
 
-```bash
-python manage.py test
+Testing ensures that all system components — frontend, backend, and integrations — operate correctly before deployment. This section outlines the manual and automated testing processes, along with known issues and resolutions encountered during development.
 
-Includes tests for:
+### Manual Test
 
-Authentication & session validation
+Manual testing was conducted to validate functionality, performance, and code quality across both frontend and backend components.
+The process also included running linting tools (ESLint & Pylint) and Django unit tests to ensure code reliability and maintainability.
 
-Assignment creation and editing
+#### Frontend Manual Testing (React + Vite)
 
-Rubric parsing
+Developers and testers can manually verify the frontend functionality and run lint checks using ESLint.
 
-Tutor mark submissions
+**Steps to Run Manual Tests**
 
-Aggregated analytics accuracy
+1. Open a terminal and navigate to the `frontend/` directory:
+  ```
+  cd frontend
+  ```
+
+2. Start the frontend development server:
+  ```
+  npm run dev
+  ```
+
+  - Open the app at [http://localhost:5173]() (default Vite port).
+
+  - Verify UI components, navigation, and data rendering.
+
+3. Run ESLint to check code quality:
+  ```
+  npm run lint
+  ```
+
+  - This scans all `.js`, `.jsx`, `.ts`, and `.tsx` files.
+
+  - Any style or syntax errors will be displayed in the terminal.
+
+4. Fix reported issues manually or with automatic formatting (optional): 
+  ```
+  npm run lint -- --fix
+  ```
+
+#### Frontend Testing Checklist
+
+| Test Area           | Description                        | Expected Outcome                             |
+|--------------------|------------------------------------|---------------------------------------------|
+| Navigation Flow     | Verify routing between pages (Dashboard, Moderation, Reports). | Smooth transitions without reloads.        |
+| File Uploads        | Upload PDF/DOCX for moderation.    | File uploads successfully and displays in list. |
+| User Authentication | Login and logout actions.          | Session created and cleared correctly.      |
+| Form Validation     | Invalid or empty fields.           | Error messages appear properly.             |
+| Lint Check (ESLint) | Run `npm run lint`.                | No critical issues; minor warnings addressed. |
+
+
+#### Backend Manual Testing (Django + PostgreSQL)
+
+The backend was tested both functionally and programmatically using Django’s built-in testing framework and Pylint for static code analysis.
+
+**Steps to Run Backend Tests**
+
+1. Open a terminal and navigate to the backend directory: 
+  ```
+  cd backend
+  ```
+
+2. Activate the Python virtual environment (if not active): 
+  ```
+  source venv/bin/activate        # Mac/Linux
+  venv\Scripts\activate           # Windows
+  ```
+
+3. Run Django test suite:
+  ```
+  python manage.py test
+  ```
+  - Runs all tests under `api/tests.py` or any app’s `tests.py` file.
+  - Ensures views, models, and API endpoints work correctly.
+
+4. Run Pylint for code quality check:
+  ```
+  pylint api backend
+  ```
+  - Generates a report showing potential issues or code style violations.
+  - Aim for a Pylint score above **4.0/10** for clean code quality.
+
+5. Apply migrations if database structure was updated:
+  ```
+  python manage.py makemigrations
+  python manage.py migrate
+  ```
+
+#### Backend Testing Checklist
+
+| Test Area               | Description                                | Expected Outcome                                 |
+|-------------------------|--------------------------------------------|-------------------------------------------------|
+| API Functionality        | Test endpoints via Postman (GET, POST, PUT, DELETE). | Correct JSON responses and status codes.       |
+| Authentication           | Validate login/logout flow and token access. | Tokens generated and validated correctly.      |
+| Database Migrations      | Run `python manage.py migrate`.            | Migrations apply without errors.               |
+| File Upload & Retrieval  | Upload and access media files.            | Files stored in `/media/` and served correctly. |
+| Code Quality (Pylint)    | Run `pylint api backend`.                  | No major warnings; good style compliance.      |
+| Unit Tests (Django)      | Run `python manage.py test`.               | All test cases pass successfully.              |
+
+
+#### Manual Test Summary
+
+| Component | Tool                 | Command                  | Purpose                                  |
+|-----------|--------------------|-------------------------|-----------------------------------------|
+| Frontend  | ESLint              | `npm run lint`          | Detect syntax/style issues in React code |
+| Frontend  | Browser Manual Test | `npm run dev`           | Verify UI & interaction                  |
+| Backend   | Django Test Suite   | `python manage.py test` | Run all backend unit tests               |
+| Backend   | Pylint              | `pylint api backend`    | Static code analysis for Python          |
+
+### Automated Test
+
+The project integrates continuous integration (CI) through GitHub Actions to automatically test, lint, and validate both the frontend and backend on every code change.
+
+This ensures that all commits and pull requests maintain consistent code quality and do not break existing functionality.
+
+#### Workflow Overview
+
+The GitHub Actions workflow file is stored at:
+
 ```
+.github/workflows/ci.yml
+```
+It is triggered automatically on:
+
+- Every push to any branch
+
+- Every pull request to any branch
+
+This guarantees that all changes are validated before being merged into the main branch.
+
+#### CI Jobs and Responsibilities
+
+The workflow defines **four main jobs:**
+
+1. **python-lint** — Lint and format check for the Django backend
+
+2. **react-lint** — Lint check for the React frontend
+
+3. **backend-test** — Run Django unit tests
+
+4. **summary** — Combine results and report outcomes
+
+| Job Name       | Description                                               | Key Tools                 | Outcome                                     |
+|----------------|-----------------------------------------------------------|---------------------------|--------------------------------------------|
+| python-lint    | Lints and format-checks backend Python files using pylint and black. | Pylint, Black             | Reports Python code quality and formatting issues. |
+| react-lint     | Lints frontend JavaScript/JSX code for React components.  | ESLint                    | Reports syntax and best-practice issues in React. |
+| backend-test   | Executes Django’s built-in test suite to validate backend functionality. | Django Test Framework     | Runs all tests in api/tests.py.            |
+| summary        | Aggregates all test reports and outputs results in the Actions log. | —                         | Summarizes outcomes and fails PRs if any job fails. |
+
+
+#### Workflow Description
+
+##### Python Lint (Backend Quality Check)
+
+- Sets up Python environment (3.x).
+
+- Installs dependencies from `backend/requirements.txt`.
+
+- Runs:
+  ```
+  pylint $(git ls-files '*.py')
+  black --check .
+  ```
+
+- Outputs results to `pylint-report.txt` and `black-report.txt`.
+
+- Marks job as failed if linting errors are detected.
+
+##### React Lint (Frontend Quality Check)
+
+- Uses Node.js version 18.
+
+- Installs frontend dependencies via:
+  ```
+  npm install
+  ```
+
+- Runs:
+  ```
+  npm run lint
+  ```
+
+- Saves lint results to eslint-report.txt.
+
+- Marks job as failed if linting errors are found.
+
+##### Backend Tests (Django Functional Testing)
+
+- Sets up Python and installs backend dependencies.
+
+- Runs Django’s unit tests with:
+  ```
+  python manage.py test --verbosity=2
+  ```
+
+- Logs all test case results in the GitHub Actions console.
+
+- If any test fails, the job is marked as failed.
+
+##### Summary Resport
+
+- Collects reports from all previous jobs:
+
+  - Python Lint Report (pylint-report.txt)
+
+  - Black Format Report (black-report.txt)
+
+  - React ESLint Report (eslint-report.txt)
+
+  - Django Test Report (console output)
+
+- If any job failed (`failed == true`), the workflow:
+  ```
+  exit 1
+  ```
+  This blocks pull requests from merging until all checks pass.
+
+### Issues
+
+| Issue                       | Description                                          | Resolution                                           |
+|------------------------------|------------------------------------------------------|-----------------------------------------------------|
+| Minor ESLint warnings        | Unused imports and console logs in React components. | Cleaned and removed during lint fix.               |
+| Pylint spacing errors        | Minor indentation inconsistencies in views.py.       | Fixed via black and manual review.                 |
+| Django test config error     | Missing database config during initial CI setup.    | Added sqlite3 as default test DB in settings.     |
+| Frontend API constant mismatch | Wrong API URL during early tests.                  | Updated constants.js to match deployment URL.     |
+| Pending Tests                | Future enhancement: add integration tests for file uploads and grading comparisons. | Planned for next sprint.                            |
+
 
 ## Known bugs or TODOs in the code
 
@@ -481,8 +700,183 @@ In the current codebase, future developers who continue this feature should focu
 
 - **Backend – `submission_mark_view(request, user_id, assignment_id, submission_id)` in `views.py`:** This Django view manages the finalization of a marker’s submission. When a marker completes marking and submits their results, this function is intended to trigger Django’s email service (e.g., via send_mail or a background task). Developers should implement or complete this logic to automatically send an email notification to the tutor or moderator. The function should also include proper error handling and logging for email delivery failures.
 
-- 
+- **Email Configuration – `settings.py`:** The project already includes an email backend configuration with 
+  ```
+  EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+  ```
+  This setup allows email messages to be printed to the console during local development and testing. Future developers should update this configuration to use a production-ready backend (e.g., SMTP or a transactional email service like SendGrid) when deploying to production.
 
+Together, these components form the **email feedback workflow,** and any future development should ensure smooth communication between frontend and backend, as well as proper testing of the email delivery process in both development and production environments.
+
+## Deployment
+
+The Assignment Moderation Tool is fully deployed using Render, a cloud-based hosting platform that provides integrated services for static frontend hosting, Python web services, and managed PostgreSQL databases.
+
+This setup supports continuous deployment from GitHub, ensuring automated builds, version control, and reliable hosting with minimal manual configuration.
+
+### System Architecture on Render
+
+| Component | Render Service Type | Technology           | Description                                                                 |
+|-----------|------------------|--------------------|-----------------------------------------------------------------------------|
+| Frontend  | Static Site       | React.js (Vite + MUI) | The compiled frontend build is hosted as a static web application and served via HTTPS. |
+| Backend   | Web Service       | Python + Django     | RESTful API handling authentication, assignment moderation logic, and database operations. |
+| Database  | Managed Database  | PostgreSQL          | Stores user accounts, assignments, rubrics, marks, and moderation results.  |
+
+Each service is deployed independently but linked through environment variables to allow secure communication and simplified scaling.
+
+### Servier Environment Overview
+
+#### Frontend
+
+- **Runtime:** Node.js 18+
+
+- **Build Command:**
+  ```
+  npm install && npm run build
+  ```
+- **Publish Directory:**
+  ```
+  dist
+  ```
+- **Start Command:** Render automatically serves static files once the build is complete
+
+#### Backend
+
+- **Runtime:** Python 3.10+
+
+- **Build Command:**
+  ```
+  #!/usr/bin/env bash
+  set -o errexit
+
+  pip install -r requirements.txt
+
+  python manage.py collectstatic --no-input
+
+  python manage.py migrate
+  ```
+
+- **Start Command:**
+  ```
+  gunicorn backend.wsgi:application
+  ```
+
+- **Working Directory:** `backend/`
+
+#### Database (PostgreSQL)
+
+- Managed instance automatically configured through Render’s “Add Database” option.
+
+- Connection handled using the `DATABASE_URL` environment variable in Django settings.
+
+### Environment Variables and Configuration
+
+All environment variables are securely stored in the Render Dashboard under the respective service settings. They replace sensitive data stored in configuration files like `settings.py` or `.env`.
+
+| Variable               | Description                                   | Example                                         |
+|------------------------|-----------------------------------------------|-------------------------------------------------|
+| SECRET_KEY             | Django secret key for encryption and sessions. | django-insecure-xyz123abc                       |
+| DEBUG                  | Set to False in production.                   | False                                           |
+| DATABASE_URL           | PostgreSQL connection string.                 | postgresql://user:password@host:5432/dbname    |
+| ALLOWED_HOSTS          | Allowed frontend and API domains.             | ["frontend.onrender.com", "backend.onrender.com"] |
+| CORS_ALLOWED_ORIGINS   | Whitelisted frontend URLs for API access.    | https://frontend.onrender.com                  |
+| EMAIL_HOST_USER        | For sending notifications (if applicable).   | example@deakin.edu.au                           |
+
+
+#### Frontend Configuration
+
+- Backend API endpoint is defined in: 
+  ```
+  src/constants.js
+  ```
+  the code:
+  ```
+  const DEPLOY_API="https://68d69d40-72ab-4896-bc17-b3c190219391-dev.e1-us-east-azure.choreoapis.dev/assignment-moderation/backend/v1.0"
+
+  export function getApiBaseUrl() {
+      return import.meta.env.VITE_API_URL ?  import.meta.env.VITE_API_URL : DEPLOY_API;
+  }
+  ```
+  switch between the local backend api and deployment backend api, the constant `VITE_API_URL` is in the file `frontend/.env` which you need to create by yourself.
+  ```
+  VITE_API_URL="http://localhost:8000"
+  ```
+
+### Deployment Steps
+
+#### Frontend (React + Vite)
+
+1. Push latest changes to the GitHub main branch.
+
+2. Render automatically detects the commit and triggers a new build:
+
+  - Installs dependencies (npm install)
+
+  - Builds optimized production files (npm run build)
+
+3. After successful build, the static files in /dist are deployed automatically.
+
+**Manual Deployment (if auto-deploy is disabled):**
+
+- Go to Render Dashboard → Frontend Service → **“Manual Deploy → Deploy latest commit.”**
+
+#### Backend (Django)
+
+1. Push latest backend changes to the linked GitHub repository.
+
+2. Render triggers the backend build:
+
+  - Installs dependencies (pip install -r requirements.txt)
+
+  - Runs migrations (python manage.py migrate)
+
+  - Collects static files (if configured) 
+    ```
+    python manage.py collectstatic --noinput
+    ```
+
+3. Starts the Django server using `gunicorn backend.wsgi`.
+
+
+**Manual Deployment:**
+
+- Render Dashboard → Backend Service → **“Manual Deploy → Deploy latest commit.”**
+
+#### Database (PostgreSQL)
+
+- Automatically provisioned through Render.
+
+- Django connects via DATABASE_URL variable—no local config required.
+
+- Backups can be configured via Render’s dashboard under the Database service.
+
+- Variables are given in the handover document.
+
+### Rollback Procedure
+
+Render provides automatic rollback features in case a deployment fails or causes instability.
+
+**To rollback the deployment:**
+
+1. Open the Render Dashboard.
+
+2. Select the affected service (Frontend or Backend).
+
+3. Navigate to the Deploys tab.
+
+4. Find the previous successful deployment.
+
+5. Click “Rollback” to revert to that stable version.
+
+**Alternatively:**
+
+- You can manually revert the code in GitHub to a previous commit and push again.
+
+- Render will automatically redeploy the reverted version.
+
+### Render Free Plan Limitations and Post-Deployment Recommendations
+
+Please refer to handover document for more information.
 
 ## Contributions
 
