@@ -1,6 +1,23 @@
 # Assignment Moderation Tool
+
+![License](https://img.shields.io/badge/license-Restricted%20Use-blue.svg)
+![Status](https://img.shields.io/badge/status-active-success.svg)
+![Version](https://img.shields.io/badge/version-1.0.3-blue.svg)
+[![Build](https://github.com/david-zhengrong-yan/Assignment-Moderation-Tool/actions/workflows/ci.yml/badge.svg)](https://github.com/david-zhengrong-yan/Assignment-Moderation-Tool/actions/workflows/ci.yml)
+
+![Python](https://img.shields.io/badge/Python-3.12-blue.svg)
+![Django](https://img.shields.io/badge/Django-5.0-green.svg)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)
+![HTML](https://img.shields.io/badge/Frontend-HTML%2FCSS%2FJS-orange.svg)
+
+![Deployment](https://img.shields.io/badge/Deployed%20on-Render-blue.svg)
+![Plan](https://img.shields.io/badge/Plan-Free-lightgrey.svg)
+
+![Client](https://img.shields.io/badge/Client-Deakin%20University%20School%20of%20Psychology-purple.svg)
+![Team](https://img.shields.io/badge/Developed%20by-[Group%2077]-brightgreen.svg)
+
 COMP30022 IT Project — Deakin University Psychology Department  
-Developed for **Carrie Ewin**, Psychology Lecturer at Deakin University
+Developed for **Carrie Ewin**, Psychology Lecturer at Deakin University. A web-based system for automating assignment moderation workflows at Deakin University.
 
 ---
 
@@ -236,6 +253,206 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   Developed using **React**, **Material UI**, and **Axios** on the frontend,  
   integrated with the **Django REST Framework** backend for real-time data retrieval, score calculation, and analytics visualization.
 
+## Setup and Run
+
+### Backend
+
+#### Install Python
+
+- Ensure Python 3.10+ is installed on your system.
+
+- Verify installation: 
+  ```
+  python --version
+  ```
+- If Python is not installed, download and install from [https://www.python.org/downloads/](https://www.python.org/downloads/)
+
+#### Create a Virtual Environment
+
+- Navigate to the `backend` folder: 
+  ```
+  cd backend
+  ```
+- Create a virtual environment (recommended name: `.venv`): 
+  ```
+  python -m venv .venv
+  ```
+- Activate the virtual environment:
+
+  - **Windows:** 
+    ```
+    .venv\Scripts\activate
+    ```
+
+  - **Mac/Linux:** 
+    ```
+    source venv/bin/activate
+    ```
+
+#### Install Dependencies
+
+- Install all required Python packages from `requirements.txt`: 
+  ```
+  pip install -r requirements.txt
+  ```
+
+- Dependencies include:
+
+  - Django
+
+  - Pillow
+
+  - django-cors-headers
+
+  - djangorestframework
+
+  - black, pylint (for linting)
+
+  - python-dotenv
+
+  - pymysql
+
+  - cryptography
+
+#### Configure Database
+
+In `backend/settings.py`, you’ll see the following code:
+
+```Python
+# Database
+# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+DATABASES = {
+    'default': dj_database_url.config(
+        default='postgresql://db_zay4_user:16NE5FWZ4GkrBH3ID8R1GFXJ0zy5kz6W@dpg-d3u4n0euk2gs73dj8ns0-a.oregon-postgres.render.com/db_zay4',
+        conn_max_age=600
+    )
+}
+```
+
+The project supports two databases:
+
+- **PostgreSQL** (remote/production)
+
+- **SQLite** (local development and testing)
+
+**Usage:**
+
+- For **local development,** uncomment the **SQLite** block and comment out the **PostgreSQL** block.
+
+- For **deployment,** comment out SQLite and use the **PostgreSQL** configuration.
+
+- After switching, always run:
+  ```
+  python manage.py migrate
+  ```
+
+#### Run Migrations
+
+- Apply Django migrations to set up the database schema:
+  ```
+  python manage.py makemigrations
+  python manage.py migrate
+  ```
+- Create a superuser (optional, for admin access, we’ve already have an admin account for you): 
+  ```
+  python manage.py createsuperuser
+  ```
+
+#### Run Backend Server
+
+- Start the Django development server: 
+  ```
+  python manage.py runserver
+  ```
+- The backend API will be available at: 
+  ```
+  http://localhost:8000
+  ```
+
+### Frontend
+
+#### Install Node.js
+
+- Ensure **Node.js 18+** and **npm** are installed.
+
+- Verify installation:
+  ```
+  node --version
+  npm --version
+  ```
+
+#### Install Frontend Dependencies
+
+- Navigate to the `frontend` folder:
+  ```
+  cd frontend
+  ```
+
+- Install all dependencies listed in `package.json`: 
+  ```
+  npm install
+  ```
+
+**Key dependencies:**
+
+- React, React-DOM (core UI)
+
+- MUI (UI components and icons)
+
+- React Router (SPA routing)
+
+- Styled-components / Emotion (styling)
+
+- Mammoth.js (DOCX to JSON parser for rubrics)
+
+- react-pdf / pdfjs-dist (PDF preview)
+
+- TailwindCSS / DaisyUI (utility classes and UI components)
+
+- React Hot Toast (notifications)
+
+#### Run Frontend Development Server
+
+- Start the frontend development server with Vite: 
+  ```
+  npm run dev
+  ```
+
+- The frontend app will be available at:
+  ```
+  http://localhost:5173
+  ```
+
+- It is configured to proxy API requests to the backend (`http://localhost:8000`) as defined in `package.json`.
+
+#### Build for Production (Optional)
+
+- To create a production build: 
+  ```
+  npm run build
+  ```
+
+- Preview the production build locally: 
+  ```
+  npm run preview
+  ```
+
+### General Notes
+
+- **Environment Variables:** Use `.env` files for sensitive info (database URL, secret key, etc.).
+
+- **Static & Media Files:** Uploaded rubrics, PDFs, and images are stored in `backend/media/`.
+
+- **Frontend/Backend Communication:** All API requests use session authentication. Ensure backend server is running before testing frontend.
+
 ## Testing
 
 ```bash
@@ -254,21 +471,71 @@ Tutor mark submissions
 Aggregated analytics accuracy
 ```
 
-## Setup and Run
+## Known bugs or TODOs in the code
 
-### Backend
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate        # (Windows: venv\Scripts\activate)
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
+One known issue that remains outstanding in the current implementation is the email feedback feature for markers, which has not yet been fully completed. The intended functionality is to allow moderators to send automated email notifications to tutors (markers) after moderation, summarizing feedback, requested changes, or approval of marks. While the backend structure for user roles and feedback storage is already in place within Django, the actual email sending logic—including configuration of the email service (e.g., SMTP setup or Django’s send_mail integration)—has not been finalized or tested. This feature should be implemented in future development to improve communication efficiency between moderators and tutors, ensuring feedback is delivered promptly and recorded for audit purposes.
 
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
+In the current codebase, future developers who continue this feature should focus on two key areas:
+
+- **Frontend – `MarkerPage.jsx`:** This React component is responsible for displaying the marker’s interface and should be updated to handle the email feedback prompt once an email has been successfully sent. Developers should add appropriate UI elements, such as a success message or notification banner, triggered after the backend confirms the email has been dispatched. Integration with the backend API endpoint that handles email sending will be required here.
+
+- **Backend – `submission_mark_view(request, user_id, assignment_id, submission_id)` in `views.py`:** This Django view manages the finalization of a marker’s submission. When a marker completes marking and submits their results, this function is intended to trigger Django’s email service (e.g., via send_mail or a background task). Developers should implement or complete this logic to automatically send an email notification to the tutor or moderator. The function should also include proper error handling and logging for email delivery failures.
+
+- 
+
+
+## Contributions
+
+Thanks to everyone who contributed to the development of the Assignment Moderation Tool!
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/david-zhengrong-yan">
+        <img src="https://avatars.githubusercontent.com/david-zhengrong-yan" width="100px;" alt=""/>
+        <br /><sub><b>Zhengrong Yan</b></sub>
+      </a>
+      <br /> Scrum Master
+      & UI Designer
+      & Full Stack Developer
+    </td>
+    <td align="center">
+      <a href="https://github.com/Johnny-Jiayin">
+        <img src="https://avatars.githubusercontent.com/Johnny-Jiayin" width="100px;" alt=""/>
+        <br /><sub><b>Jiayin Liu</b></sub>
+      </a>
+      <br /> Backend Developer&mdash;Logic & UI Designer
+    </td>
+    <td align="center">
+      <a href="https://github.com/Juuuu666
+">
+        <img src="https://avatars.githubusercontent.com/Juuuu666
+" width="100px;" alt=""/>
+        <br /><sub><b>Xian Ma</b></sub>
+      </a>
+      <br />Frontend Developer & UI Designer
+    </td>
+    <td align="center">
+      <a href="https://github.com/SIMONCHENYI">
+        <img src="https://avatars.githubusercontent.com/SIMONCHENYI" width="100px;" alt=""/>
+        <br /><sub><b>Chenyi Song</b></sub>
+      </a>
+      <br />Frontend Developer & UI Designer
+    </td>
+    <td align="center">
+      <a href="https://github.com/HaochenY3">
+        <img src="https://avatars.githubusercontent.com/HaochenY3" width="100px;" alt=""/>
+        <br /><sub><b>Haochen Yu</b></sub>
+      </a>
+      <br />Product Owner & Backend Developer&mdash;Testing & UI Designer
+    </td>
+  </tr>
+</table>
+
+
+## Licence
+
+This project is licensed under a **Restricted Internal Use License**.  
+It is intended for use only by **Deakin University – School of Psychology** and the **Group 77** development team.
+
+See the [LICENSE.md](./LICENSE.md) file for full license details.
