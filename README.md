@@ -96,12 +96,18 @@ that streamlines the entire moderation process — from assignment upload to tut
 ## Folder Structure
 
 ### Frontend (`frontend/`)
-![Frontend](./images/Frontend.png)
+
+<div align="center">
+  <img src="./images/Frontend.png" alt="Frontend.png"  width="500px" />
+</div>
 
 ---
 
 ### Backend (`backend/`)
-![Backend](./images/Backend.png)
+
+<div align="center">
+  <img src="./images/Backend.png" alt="Backend.png"  width="500px" />
+</div>
 
 ---
 
@@ -790,7 +796,7 @@ All environment variables are securely stored in the Render Dashboard under the 
   src/constants.js
   ```
   the code:
-  ```
+  ```JavaScript
   const DEPLOY_API="https://68d69d40-72ab-4896-bc17-b3c190219391-dev.e1-us-east-azure.choreoapis.dev/assignment-moderation/backend/v1.0"
 
   export function getApiBaseUrl() {
