@@ -160,7 +160,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   Implemented using **React**, **Material UI**, and **Axios** for API communication.
 
 ### Sign-Up Page
-![Sign-Up Page](./sign_up.png)
+![Sign-Up Page](./images/sign_up.png)
 
 - **Purpose:**  
   Enables new users to register for the Assignment Moderation Tool by providing their personal information and creating secure credentials.
@@ -181,7 +181,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   Implemented using **React**, **Material UI**, and **Axios** for REST API communication with the Django backend.
 
 ### Edit Account Page
-![Edit Account Page](./edit_account.png)
+![Edit Account Page](./images/edit_account.png)
 
 - **Purpose:**  
   Allows users to manage and update their personal information, including username, email, password, and profile picture.
@@ -203,7 +203,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   Built with **React**, **Material UI**, and **Axios**, communicating with the Django backend for profile management.
 
 ### Assignment Page
-![Assignment Page](./assignment.png)
+![Assignment Page](./images/assignment.png)
 
 - **Purpose:**  
   Displays all existing assignments in a structured dashboard view, allowing users to search, filter, sort, and — for administrators — create new assignments.
@@ -237,7 +237,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   integrated with the **Django REST API** for fetching, filtering, and managing assignment data.
 
 ### Assignment Detail / Analysis Page (Administrator View)
-![Assignment Analysis Page](./assignment_information.png)
+![Assignment Analysis Page](./images/assignment_information.png)
 
 - **Purpose:**  
   Provides professors (administrators) with a detailed view of each assignment after selecting it from the **Assignment Page**.  
@@ -266,7 +266,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   integrated with the **Django REST Framework** backend for real-time data retrieval, score calculation, and analytics visualization.
 
 ### Create Assignment Page
-![Create Assignment Page](./create_assignment.png)
+![Create Assignment Page](./images/create_assignment.png)
 
 - **Purpose:**  
   Enables administrators (professors) to create new assignments, upload required files, and attach detailed rubrics for tutor marking.
@@ -291,7 +291,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   integrated with the **Django REST API** and *Mammoth.js* for rubric parsing and assignment creation.
 
 ### Edit Assignment Page
-![Edit Assignment Page](./edit_assignment.png)
+![Edit Assignment Page](./images/edit_assignment.png)
 
 - **Purpose:**  
   Allows tutors (and administrators) to mark student submissions based on predefined rubrics, record feedback, and manage evaluation data for each assignment.
@@ -317,7 +317,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   connected to the **Django REST API** for managing marks, feedback, and synchronization.
 
 ### Marking Comparison Page
-![Marking Comparison Page](./mark_comparison.png)
+![Marking Comparison Page](./images/mark_comparison.png)
 
 - **Purpose:**  
   Provides administrators with an overview of all tutor marks for each submission, allowing them to compare grading consistency and identify discrepancies across markers.
@@ -346,7 +346,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   connected to the **Django REST API** for retrieving real-time marking data and analytics.
 
 ### Marker’s Assignment Page
-![Marker’s Assignment Page](./marker's_assignment_page.png)
+![Marker’s Assignment Page](./images/marker's_assignment_page.png)
 
 - **Purpose:**  
   Allows tutors (markers) to access assignment details, review the grading rubric, and begin marking student submissions directly from a centralized interface.
@@ -373,7 +373,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
   integrated with the **Django REST API** for real-time retrieval of assignments, rubrics, and submission statuses.
 
 ### Marking Page
-![Marking Page](./marking_page.png)
+![Marking Page](./images/marking_page.png)
 
 - **Purpose:**  
   Enables tutors to view student submissions and apply rubric-based grading interactively within a single interface.
