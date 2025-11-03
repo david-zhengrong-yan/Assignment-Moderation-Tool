@@ -142,7 +142,7 @@ Each page is designed using **React + MUI**, ensuring a consistent and responsiv
 ---
 
 ### Login Page
-![Login Page](./login.png)
+![Login Page](./images/login.png)
 
 - **Purpose:** Allows users (professors and tutors) to securely log in to the system using their registered email and password.
 - **Workflow:**
